@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from './generated/prisma/client';
+import { PrismaClient } from '@/lib/generated/prisma/client';
 
 
 const adapter = new PrismaPg({
@@ -9,11 +9,13 @@ const prismaClientSingleton = () => {
   return new PrismaClient({ adapter })
 }
 declare const globalThis: {
-  prismaGlobal: ReturnType<typeof prismaClientSingleton>;
+  prismaGlobalV2: ReturnType<typeof prismaClientSingleton>;
 } & typeof global;
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+
+const prisma = globalThis.prismaGlobalV2 ?? prismaClientSingleton();
+
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.prismaGlobal = prisma;
+  globalThis.prismaGlobalV2 = prisma;
 }
 export default prisma;
 

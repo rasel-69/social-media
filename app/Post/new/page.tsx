@@ -2,12 +2,12 @@
 
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  X, 
-  Image as ImageIcon, 
-  Smile, 
-  Code2, 
-  Calendar, 
+import {
+  X,
+  Image as ImageIcon,
+  Smile,
+  Code2,
+  Calendar,
   MapPin,
   ArrowLeft
 } from "lucide-react";
@@ -25,7 +25,7 @@ const CreatePostPage = () => {
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
-      setImage(res[0].url);
+      setImage(res[0].ufsUrl);
       setIsUploading(false);
       setUploadProgress(0);
     },
@@ -58,27 +58,33 @@ const CreatePostPage = () => {
     }
   };
 
+
+
   const handlePost = async () => {
     if (!content.trim() && !image) return;
     if (isUploading) return;
 
     startTransition(async () => {
       try {
-        await createPost(content, image || undefined);
-        router.push("/");
-        router.refresh();
+        const result = await createPost(content, image || undefined);
+        if (result?.success) {
+          // Refresh the data on the home page before navigating
+          router.push("/");
+          router.refresh();
+        }
       } catch (error) {
-        console.error("Failed to create post:", error);
+        alert("Something went wrong while posting.");
       }
     });
-  };
+  }
+
 
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-6">
-          <button 
+          <button
             onClick={() => router.back()}
             className="rounded-full p-2 transition hover:bg-zinc-900"
           >
@@ -122,8 +128,8 @@ const CreatePostPage = () => {
                       <span className="text-xs font-bold text-emerald-400">{uploadProgress}%</span>
                     </div>
                     <div className="w-full max-w-xs overflow-hidden rounded-full bg-zinc-800">
-                      <div 
-                        className="h-1.5 bg-emerald-500 transition-all duration-300" 
+                      <div
+                        className="h-1.5 bg-emerald-500 transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -137,10 +143,10 @@ const CreatePostPage = () => {
                     >
                       <X className="h-5 w-5" />
                     </button>
-                    <img 
-                      src={image!} 
-                      alt="Preview" 
-                      className="max-h-[400px] w-full object-cover" 
+                    <img
+                      src={image!}
+                      alt="Preview"
+                      className="max-h-[400px] w-full object-cover"
                     />
                   </>
                 )}
