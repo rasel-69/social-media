@@ -17,7 +17,7 @@ const suggestedUsers = [
 
 export function RightSidebar() {
   return (
-    <aside className="hidden md:block lg:col-span-3 px-4 py-5 lg:px-5">
+    <aside className="hidden md:block lg:col-span-3 px-4 py-5 lg:px-5 h-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
       <div className="space-y-5">
         {/* Trending */}
         <div className="rounded-3xl bg-zinc-950 p-5">

@@ -18,7 +18,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:col-span-3 lg:flex lg:flex-col lg:justify-between lg:border-r lg:border-zinc-800 lg:px-5 lg:py-5">
+    <aside className="hidden lg:col-span-3 lg:flex lg:flex-col lg:justify-between lg:border-r lg:border-zinc-800 lg:px-5 lg:py-5 h-full">
       <div>
         <Link href="/" className="mb-8 flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-500 text-emerald-400">
           <Terminal className="h-5 w-5" />
@@ -27,7 +27,7 @@ export function Sidebar() {
         <nav className="space-y-1">
 
           <Link
-            href="/home"
+            href="/"
             className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
           >
             <HomeIcon

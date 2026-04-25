@@ -5,9 +5,7 @@ import { Bell, Compass, Home as HomeIcon, Mail, User } from "lucide-react";
 import prisma from "@/lib/db";
 
 export default async function Home() {
-  // Fetch posts from database
-  // In a real app, you'd handle authentication and fetch relevant posts
-  // For now, let's just fetch all posts or return empty if none
+
   const posts = await prisma.post.findMany({
     orderBy: {
       createdAt: "desc",
@@ -32,9 +30,9 @@ export default async function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="h-screen bg-black text-white overflow-hidden">
 
-      <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-12">
+      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 lg:grid-cols-12">
         {/* Left Sidebar */}
         <Sidebar />
 

@@ -29,7 +29,7 @@ export function PostCard({ post }: PostCardProps) {
               </span>
               <span className="text-zinc-500 text-sm">@{post.author.username}</span>
               <span className="text-zinc-500 text-sm">·</span>
-              <span className="text-zinc-500 text-sm">
+              <span className="text-zinc-500 text-sm" suppressHydrationWarning>
                 {new Date(post.createdAt).toLocaleDateString()}
               </span>
             </div>
