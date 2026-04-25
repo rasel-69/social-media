@@ -4,8 +4,8 @@
 import prisma from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-export async function createPost(content: string) {
-  if (!content.trim()) return;
+export async function createPost(content: string, image?: string) {
+  if (!content.trim() && !image) return;
 
   // For demo purposes, we'll use a hardcoded user or create one if not exists
   let user = await prisma.user.findUnique({
@@ -25,6 +25,7 @@ export async function createPost(content: string) {
   await prisma.post.create({
     data: {
       content,
+      image,
       authorId: user.id,
     },
   });

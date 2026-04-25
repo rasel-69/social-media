@@ -1,24 +1,18 @@
 "use client";
 
 import {
-  Bell,
-  Compass,
+  BellIcon,
+  CompassIcon,
   Home as HomeIcon,
-  Mail,
+  MailIcon,
   MoreHorizontal,
   Terminal,
-  User,
+  UserIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const sidebarLinks = [
-  { name: "Home", icon: HomeIcon, href: "/" },
-  { name: "Explore", icon: Compass, href: "/explore" },
-  { name: "Notifications", icon: Bell, href: "/notifications" },
-  { name: "Messages", icon: Mail, href: "/messages" },
-  { name: "Profile", icon: User, href: "/profile" },
-];
+
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -31,32 +25,64 @@ export function Sidebar() {
         </Link>
 
         <nav className="space-y-1">
-          {sidebarLinks.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition ${
-                  active
-                    ? "font-semibold text-white"
-                    : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
-                }`}
-              >
-                <Icon
-                  className={`h-6 w-6 ${active ? "text-emerald-400" : ""}`}
-                />
-                <span className="text-xl">{item.name}</span>
-              </Link>
-            );
-          })}
+          <Link
+            href="/home"
+            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+          >
+            <HomeIcon
+              className="h-6 w-6 text-emerald-400"
+            />
+            Home
+          </Link>
+
+          <Link
+            href="/Explore"
+            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+          >
+            <CompassIcon
+              className="h-6 w-6 text-emerald-400"
+            />
+            Explore
+          </Link>
+
+          <Link
+            href="/Notifications"
+            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+          >
+            <BellIcon
+              className="h-6 w-6 text-emerald-400"
+            />
+            Notifications
+          </Link>
+
+          <Link
+            href="/Messages"
+            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+          >
+            <MailIcon
+              className="h-6 w-6 text-emerald-400"
+            />
+            Messages
+          </Link>
+
+          <Link
+            href="/Profile"
+            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+          >
+            <UserIcon
+              className="h-6 w-6 text-emerald-400"
+            />
+            Profile
+          </Link>
+
         </nav>
 
-        <button className="mt-6 w-full rounded-full bg-emerald-500 py-3 text-lg font-bold text-black transition hover:bg-emerald-400">
-          Post
-        </button>
+        <Link href="/Post/new" >
+          <button className="mt-6 w-full rounded-full bg-emerald-500 py-3 text-lg font-bold text-black transition hover:bg-emerald-400">
+            Post
+          </button>
+        </Link>
       </div>
 
       <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900">

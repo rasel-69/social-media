@@ -4,6 +4,7 @@ interface PostCardProps {
   post: {
     id: string;
     content: string;
+    image?: string | null;
     createdAt: Date;
     author: {
       name: string | null;
@@ -39,6 +40,15 @@ export function PostCard({ post }: PostCardProps) {
           <p className="mt-1 text-white leading-normal whitespace-pre-wrap">
             {post.content}
           </p>
+          {post.image && (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-800">
+              <img
+                src={post.image}
+                alt="Post attachment"
+                className="max-h-[512px] w-full object-cover"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
