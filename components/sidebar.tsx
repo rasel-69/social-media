@@ -75,8 +75,8 @@ export function Sidebar() {
           </Link>
 
           <Link
-            href="/Profile"
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Profile" ? "text-emerald-400" : "text-white"}`}
+            href={session ? `/Profile/${user?.username || session.user.id}` : "/Profile"}
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname.startsWith("/Profile") ? "text-emerald-400" : "text-white"}`}
           >
             <UserIcon className="h-6 w-6" />
             Profile

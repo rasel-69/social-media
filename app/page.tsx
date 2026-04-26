@@ -69,7 +69,7 @@ export default async function Home() {
           
           {session ? (
             <Link
-              href="/Profile"
+              href={`/Profile/${session.user.username || session.user.id}`}
               className="flex flex-col items-center gap-1 py-2 text-zinc-400"
             >
               <User className="h-5 w-5" />

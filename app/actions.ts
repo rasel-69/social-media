@@ -139,11 +139,28 @@ export async function toggleReaction(postId: string, type: string = "LIKE") {
   return { success: true };
 }
 
+export async function getUserPosts(userId: string) {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { authorId: userId },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+        reactions: true,
+      },
+    });
 
-
-
-
-
-
-
-
+    return posts;
+  } catch (error) {
+    console.error("Error in getUserPosts:", error);
+    throw error;
+  }
+}

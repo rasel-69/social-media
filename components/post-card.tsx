@@ -2,6 +2,7 @@
 
 import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle } from "lucide-react";
 import { useState, useTransition, useRef } from "react";
+import Link from "next/link";
 import { deletePost, updatePost, toggleReaction } from "@/app/actions";
 import { Post } from "./feed";
 
@@ -98,16 +99,16 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
     <div className="border-b border-zinc-800 p-4 lg:p-5 transition hover:bg-zinc-950/50">
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase">
+        <Link href={`/Profile/${post.author.username || post.authorId}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase hover:opacity-80 transition">
           {initials}
-        </div>
+        </Link>
 
         <div className="flex-1">
           <div className="flex items-center justify-between relative">
             <div className="flex items-center gap-1">
-              <span className="font-bold text-white hover:underline cursor-pointer">
+              <Link href={`/Profile/${post.author.username || post.authorId}`} className="font-bold text-white hover:underline">
                 {displayName}
-              </span>
+              </Link>
               <span className="text-zinc-500 text-sm">@{post.author.username || "user"}</span>
               <span className="text-zinc-500 text-sm">·</span>
               <span className="text-zinc-500 text-sm" suppressHydrationWarning>

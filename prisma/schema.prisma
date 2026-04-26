@@ -26,7 +26,21 @@ model User {
   accounts      Account[]
   posts         Post[]
   reactions     Reaction[]
+  followers     Follow[]   @relation("following")
+  following     Follow[]   @relation("follower")
 }
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
 
 model Session {
   id        String   @id @default(cuid())
