@@ -1,9 +1,10 @@
 "use client";
 
-import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle, Share2 } from "lucide-react";
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
-import { deletePost, updatePost, toggleReaction } from "@/app/actions";
+import { deletePost, updatePost, toggleReaction, createShare } from "@/app/actions";
+import { CommentSection } from "./comment/CommentSection";
 import { Post } from "./feed";
 
 interface PostCardProps {
@@ -18,6 +19,9 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
   const [editedContent, setEditedContent] = useState(post.content);
   const [isPending, startTransition] = useTransition();
   const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState((post as any)._count?.comments || (post as any).comments?.length || 0);
+  const [shareCount, setShareCount] = useState((post as any)._count?.shares || (post as any).shares?.length || 0);
   const reactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const displayName = post.author.name || post.author.username || "Unknown User";
@@ -215,24 +219,29 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
             </div>
           )}
 
-          {/* Reactions Info - Integrated into the post flow */}
-          {reactionCount > 0 && (
+          {/* Reactions & Stats Info */}
+          {(reactionCount > 0 || commentCount > 0 || shareCount > 0) && (
             <div className="mt-4 flex items-center justify-between px-1">
-              <div className="flex items-center gap-2 group cursor-pointer">
-                <div className="flex -space-x-1.5">
-                  {/* Show top 3 reaction emojis with cleaner styling */}
-                  {Array.from(new Set(post.reactions.map(r => r.type))).slice(0, 3).map((type) => (
-                    <div key={type} className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950 border border-zinc-800 text-[11px] shadow-sm">
-                      {reactions.find(r => r.type === type)?.emoji}
-                    </div>
-                  ))}
+              {reactionCount > 0 ? (
+                <div className="flex items-center gap-2 group cursor-pointer">
+                  <div className="flex -space-x-1.5">
+                    {/* Show top 3 reaction emojis with cleaner styling */}
+                    {Array.from(new Set(post.reactions.map(r => r.type))).slice(0, 3).map((type) => (
+                      <div key={type} className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950 border border-zinc-800 text-[11px] shadow-sm">
+                        {reactions.find(r => r.type === type)?.emoji}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-zinc-500 font-medium hover:underline hover:text-zinc-400 transition-colors">
+                    {reactionCount}
+                  </span>
                 </div>
-                <span className="text-sm text-zinc-500 font-medium hover:underline hover:text-zinc-400 transition-colors">
-                  {reactionCount}
-                </span>
-              </div>
-              <div className="text-xs text-zinc-600 font-medium">
-                0 comments
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-3 text-xs text-zinc-600 font-medium">
+                {commentCount > 0 && <span>{commentCount} comments</span>}
+                {shareCount > 0 && <span>{shareCount} shares</span>}
               </div>
             </div>
           )}
@@ -274,11 +283,38 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
               </button>
             </div>
 
-            <button className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white">
+            <button 
+              onClick={() => setShowComments(!showComments)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
+            >
               <MessageCircle className="h-5 w-5" />
               <span className="font-semibold">Comment</span>
             </button>
+
+            <button 
+              onClick={async () => {
+                try {
+                  const res = await createShare(post.id);
+                  if (res.success) setShareCount((prev: number) => prev + 1);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
+            >
+              <Share2 className="h-5 w-5" />
+              <span className="font-semibold">Share</span>
+            </button>
           </div>
+
+          {showComments && (
+            <CommentSection 
+              postId={post.id} 
+              currentUserId={currentUserId} 
+              onCommentCountChange={setCommentCount}
+              onClose={() => setShowComments(false)}
+            />
+          )}
         </div>
       </div>
     </div>

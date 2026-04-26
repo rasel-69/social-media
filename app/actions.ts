@@ -164,3 +164,129 @@ export async function getUserPosts(userId: string) {
     throw error;
   }
 }
+
+// ----- COMMENT ACTIONS -----
+
+export async function createComment(content: string, postId: string, parentId?: string) {
+  if (!content.trim()) throw new Error("Comment cannot be empty");
+  if (content.length > 500) throw new Error("Comment is too long");
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const comment = await prisma.comment.create({
+    data: {
+      content,
+      postId,
+      parentId: parentId || null,
+      authorId: session.user.id,
+    },
+    include: {
+      author: {
+        select: { name: true, username: true, image: true }
+      }
+    }
+  });
+
+  revalidatePath("/");
+  return { success: true, comment };
+}
+
+export async function updateComment(commentId: string, content: string) {
+  if (!content.trim()) throw new Error("Comment cannot be empty");
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true },
+  });
+
+  if (!comment) throw new Error("Comment not found");
+  if (comment.authorId !== session.user.id) throw new Error("You can only edit your own comments");
+
+  await prisma.comment.update({
+    where: { id: commentId },
+    data: { content },
+  });
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function deleteComment(commentId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { authorId: true },
+  });
+
+  if (!comment) throw new Error("Comment not found");
+  if (comment.authorId !== session.user.id) throw new Error("You can only delete your own comments");
+
+  // This will cascade delete replies due to relation rules or we handle it if cascade isn't set.
+  // Wait, our Prisma schema has `onDelete: Cascade`? Let's check schema. We didn't add onDelete: Cascade to replies. 
+  // For safety, we can delete the comment itself. Since we didn't specify cascade, we might need to delete replies manually.
+  await prisma.comment.deleteMany({
+    where: { parentId: commentId }
+  });
+
+  await prisma.comment.delete({
+    where: { id: commentId },
+  });
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function getComments(postId: string) {
+  const comments = await prisma.comment.findMany({
+    where: { 
+      postId,
+      parentId: null, // Top level comments
+    },
+    orderBy: { createdAt: "asc" },
+    include: {
+      author: { select: { name: true, username: true, image: true } },
+      replies: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          author: { select: { name: true, username: true, image: true } }
+        }
+      }
+    }
+  });
+  return comments;
+}
+
+// ----- SHARE ACTIONS -----
+
+export async function createShare(postId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const share = await prisma.share.create({
+    data: {
+      postId,
+      sharerId: session.user.id,
+    }
+  });
+
+  revalidatePath("/");
+  return { success: true, share };
+}
