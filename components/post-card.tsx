@@ -74,7 +74,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
 
   const handleToggleReaction = async (type: string = "LIKE") => {
     if (!currentUserId) return;
-    
+
     startTransition(async () => {
       try {
         await toggleReaction(post.id, type);
@@ -240,7 +240,14 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
                 <div />
               )}
               <div className="flex gap-3 text-xs text-zinc-600 font-medium">
-                {commentCount > 0 && <span>{commentCount} comments</span>}
+                {commentCount > 0 && (
+                  <button
+                    onClick={() => setShowComments((prev) => !prev)}
+                    className="hover:underline hover:text-zinc-400 transition-colors"
+                  >
+                    {commentCount} comments
+                  </button>
+                )}
                 {shareCount > 0 && <span>{shareCount} shares</span>}
               </div>
             </div>
@@ -248,7 +255,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
 
           {/* Action Buttons - Single line separator for a professional feel */}
           <div className="mt-3 flex items-center gap-1 border-t border-zinc-900 pt-1.5 relative">
-            <div 
+            <div
               className="flex-1 relative"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
@@ -283,7 +290,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
               </button>
             </div>
 
-            <button 
+            <button
               onClick={() => setShowComments(!showComments)}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
             >
@@ -291,7 +298,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
               <span className="font-semibold">Comment</span>
             </button>
 
-            <button 
+            <button
               onClick={async () => {
                 try {
                   const res = await createShare(post.id);
@@ -308,9 +315,9 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
           </div>
 
           {showComments && (
-            <CommentSection 
-              postId={post.id} 
-              currentUserId={currentUserId} 
+            <CommentSection
+              postId={post.id}
+              currentUserId={currentUserId}
               onCommentCountChange={setCommentCount}
               onClose={() => setShowComments(false)}
             />
