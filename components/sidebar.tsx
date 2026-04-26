@@ -8,14 +8,24 @@ import {
   MoreHorizontal,
   Terminal,
   UserIcon,
+  LogOut,
+  LogIn
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-
+import { usePathname, useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
+import { User } from "@/lib/auth-types";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user as User | undefined;
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.refresh();
+  };
 
   return (
     <aside className="hidden lg:col-span-3 lg:flex lg:flex-col lg:justify-between lg:border-r lg:border-zinc-800 lg:px-5 lg:py-5 h-full">
@@ -25,80 +35,87 @@ export function Sidebar() {
         </Link>
 
         <nav className="space-y-1">
-
           <Link
             href="/"
-            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/" ? "text-emerald-400" : "text-white"}`}
           >
-            <HomeIcon
-              className="h-6 w-6 text-emerald-400"
-            />
+            <HomeIcon className="h-6 w-6" />
             Home
           </Link>
 
           <Link
             href="/Explore"
-            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Explore" ? "text-emerald-400" : "text-white"}`}
           >
-            <CompassIcon
-              className="h-6 w-6 text-emerald-400"
-            />
+            <CompassIcon className="h-6 w-6" />
             Explore
           </Link>
 
           <Link
             href="/Notifications"
-            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Notifications" ? "text-emerald-400" : "text-white"}`}
           >
-            <BellIcon
-              className="h-6 w-6 text-emerald-400"
-            />
+            <BellIcon className="h-6 w-6" />
             Notifications
           </Link>
 
           <Link
             href="/Messages"
-            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Messages" ? "text-emerald-400" : "text-white"}`}
           >
-            <MailIcon
-              className="h-6 w-6 text-emerald-400"
-            />
+            <MailIcon className="h-6 w-6" />
             Messages
           </Link>
 
           <Link
             href="/Profile"
-            className="flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Profile" ? "text-emerald-400" : "text-white"}`}
           >
-            <UserIcon
-              className="h-6 w-6 text-emerald-400"
-            />
+            <UserIcon className="h-6 w-6" />
             Profile
           </Link>
-
         </nav>
 
-        <Link href="/Post/new" >
+        <Link href="/Post/new">
           <button className="mt-6 w-full rounded-full bg-emerald-500 py-3 text-lg font-bold text-black transition hover:bg-emerald-400">
             Post
           </button>
         </Link>
       </div>
 
-      <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400">
-            0
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold">Dev_06378</h3>
-            <p className="text-xs text-zinc-400">@06378384</p>
-          </div>
-        </div>
-
-        <MoreHorizontal className="h-4 w-4 text-zinc-400" />
+      <div className="mt-auto">
+        {!isPending && (
+          session ? (
+            <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900 group relative">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase">
+                  {session.user.name[0]}
+                </div>
+                <div className="overflow-hidden">
+                  <h3 className="text-sm font-bold truncate">{session.user.name}</h3>
+                  <p className="text-xs text-zinc-400 truncate">@{user?.username || session.user.email.split('@')[0]}</p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={handleLogout}
+                className="ml-2 text-zinc-500 hover:text-red-400 transition"
+                title="Log out"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="flex items-center gap-3 rounded-full p-3 transition hover:bg-zinc-900 text-emerald-400 font-bold">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10">
+                <LogIn className="h-6 w-6" />
+              </div>
+              <span>Sign In</span>
+            </Link>
+          )
+        )}
       </div>
     </aside>
   );
 }
+

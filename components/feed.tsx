@@ -12,7 +12,7 @@ interface Post {
     createdAt: Date;
     author: {
         name: string | null;
-        username: string;
+        username: string | null;
         image: string | null;
     };
 }
