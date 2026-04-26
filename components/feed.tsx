@@ -6,10 +6,12 @@ import { useState, useTransition, useRef } from "react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 
+
 interface Post {
     id: string;
     content: string;
     createdAt: Date;
+    authorId: string; // Add this to check ownership
     author: {
         name: string | null;
         username: string | null;
@@ -19,9 +21,11 @@ interface Post {
 
 interface FeedProps {
     initialPosts: Post[];
+    currentUserId?: string; // Pass the logged-in user's ID
 }
 
-export function Feed({ initialPosts }: FeedProps) {
+
+export function Feed({ initialPosts, currentUserId }: FeedProps) {
     const [content, setContent] = useState("");
     const [image, setImage] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -74,6 +78,10 @@ export function Feed({ initialPosts }: FeedProps) {
         });
     };
 
+
+
+
+
     return (
         <section className="lg:col-span-6 lg:border-r lg:border-zinc-800 h-full overflow-y-auto pb-16 lg:pb-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
             {/* Mobile Header */}
@@ -83,7 +91,6 @@ export function Feed({ initialPosts }: FeedProps) {
                         <Menu className="h-5 w-5" />
                     </button>
 
-                    <h1 className="text-xl font-bold lg:text-2xl">Home</h1>
                 </div>
 
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 lg:hidden">
@@ -172,7 +179,11 @@ export function Feed({ initialPosts }: FeedProps) {
             <div className="divide-y divide-zinc-800">
                 {initialPosts.length > 0 ? (
                     initialPosts.map((post) => (
-                        <PostCard key={post.id} post={post} />
+                        <PostCard
+                            key={post.id}
+                            post={post}
+                            isOwner={post.authorId === currentUserId}
+                        />
                     ))
                 ) : (
                     <div className="flex h-[40vh] items-center justify-center px-4 text-center">
@@ -182,6 +193,9 @@ export function Feed({ initialPosts }: FeedProps) {
                     </div>
                 )}
             </div>
+
         </section>
+
+
     );
 }

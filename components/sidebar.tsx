@@ -5,7 +5,6 @@ import {
   CompassIcon,
   Home as HomeIcon,
   MailIcon,
-  MoreHorizontal,
   Terminal,
   UserIcon,
   LogOut,
@@ -25,6 +24,14 @@ export function Sidebar() {
   const handleLogout = async () => {
     await authClient.signOut();
     router.refresh();
+  };
+
+  // Logic to handle restricted "Post" access
+  const handlePostRedirect = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault(); // Stop the <Link> from navigating directly
+      router.push("/login?callbackURL=/Post/new");
+    }
   };
 
   return (
@@ -76,7 +83,8 @@ export function Sidebar() {
           </Link>
         </nav>
 
-        <Link href="/Post/new">
+        {/* Updated Post Button with click handler */}
+        <Link href="/Post/new" onClick={handlePostRedirect}>
           <button className="mt-6 w-full rounded-full bg-emerald-500 py-3 text-lg font-bold text-black transition hover:bg-emerald-400">
             Post
           </button>
@@ -89,15 +97,15 @@ export function Sidebar() {
             <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900 group relative">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase">
-                  {session.user.name[0]}
+                  {session.user.name?.[0] || "?"}
                 </div>
                 <div className="overflow-hidden">
                   <h3 className="text-sm font-bold truncate">{session.user.name}</h3>
                   <p className="text-xs text-zinc-400 truncate">@{user?.username || session.user.email.split('@')[0]}</p>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={handleLogout}
                 className="ml-2 text-zinc-500 hover:text-red-400 transition"
                 title="Log out"
@@ -118,4 +126,3 @@ export function Sidebar() {
     </aside>
   );
 }
-

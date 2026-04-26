@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react"; // Added useEffect
 import { useRouter } from "next/navigation";
 import {
   X,
@@ -9,10 +9,12 @@ import {
   Code2,
   Calendar,
   MapPin,
-  ArrowLeft
+  ArrowLeft,
+  Loader2 // Added for loading state
 } from "lucide-react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
+import { authClient } from "@/lib/auth-client"; // Import authClient
 
 const CreatePostPage = () => {
   const [content, setContent] = useState("");
@@ -22,6 +24,16 @@ const CreatePostPage = () => {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // Get session data
+  const { data: session, isPending: isSessionLoading } = authClient.useSession();
+
+  // Protect the route: If not logged in and not loading, redirect to login
+  useEffect(() => {
+    if (!isSessionLoading && !session) {
+      router.push("/login?callbackURL=/Post/new");
+    }
+  }, [session, isSessionLoading, router]);
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
@@ -33,7 +45,7 @@ const CreatePostPage = () => {
       console.error("Upload error:", error);
       setIsUploading(false);
       setUploadProgress(0);
-      alert("Failed to upload image. Please check your connection and try again.");
+      alert("Failed to upload image.");
     },
     onUploadBegin: () => {
       setIsUploading(true);
@@ -58,17 +70,14 @@ const CreatePostPage = () => {
     }
   };
 
-
-
   const handlePost = async () => {
     if (!content.trim() && !image) return;
-    if (isUploading) return;
+    if (isUploading || !session) return;
 
     startTransition(async () => {
       try {
         const result = await createPost(content, image || undefined);
         if (result?.success) {
-          // Refresh the data on the home page before navigating
           router.push("/");
           router.refresh();
         }
@@ -76,12 +85,19 @@ const CreatePostPage = () => {
         alert("Something went wrong while posting.");
       }
     });
-  }
+  };
 
+  // Show a loader while checking session to prevent "flashing" the content
+  if (isSessionLoading || !session) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur-md">
         <div className="flex items-center gap-6">
           <button
@@ -103,13 +119,12 @@ const CreatePostPage = () => {
 
       <main className="mx-auto max-w-2xl px-4 py-6">
         <div className="flex gap-4">
-          {/* Avatar */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400">
-            D
+          {/* Dynamic Avatar using session data */}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase">
+            {session.user.name?.[0] || "U"}
           </div>
 
           <div className="flex-1">
-            {/* Content Area */}
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -118,7 +133,6 @@ const CreatePostPage = () => {
               autoFocus
             />
 
-            {/* Image Preview */}
             {(image || isUploading) && (
               <div className="relative mt-4 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50">
                 {isUploading ? (
@@ -153,7 +167,6 @@ const CreatePostPage = () => {
               </div>
             )}
 
-            {/* Tools & Actions */}
             <div className="mt-8 border-t border-zinc-800 pt-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">

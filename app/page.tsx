@@ -42,7 +42,7 @@ export default async function Home() {
         <Sidebar />
 
         {/* Main Feed */}
-        <Feed initialPosts={posts} />
+        <Feed initialPosts={posts} currentUserId={session?.user.id} />
 
         {/* Right Sidebar */}
         <RightSidebar />

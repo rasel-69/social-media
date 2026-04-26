@@ -4,7 +4,8 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Terminal, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -14,6 +15,10 @@ export default function LoginPage() {
     const [error, setError] = useState("");
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackURL = searchParams.get("callbackURL") || "/"; // Get the return path
+
+
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,14 +28,15 @@ export default function LoginPage() {
         const { data, error: loginError } = await authClient.signIn.email({
             email,
             password,
-            callbackURL: "/",
+            callbackURL: callbackURL, // Better for Better-Auth to handle internal redirects
         });
 
         if (loginError) {
-            setError(loginError.message || "Invalid credentials. Please try again.");
+            setError(loginError.message || "Invalid credentials.");
             setIsLoading(false);
         } else {
-            router.push("/");
+            // Manual fallback if callbackURL isn't handled by the client automatically
+            router.push(callbackURL);
         }
     };
 
