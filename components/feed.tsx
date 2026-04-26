@@ -1,23 +1,25 @@
 "use client";
 
-import { Code2, Menu, Image as ImageIcon, X } from "lucide-react";
+import { Code2, Menu, Image as ImageIcon, X, Smile } from "lucide-react";
 import { PostCard } from "./post-card";
 import { useState, useTransition, useRef } from "react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 
-interface Post {
-    id: string;
-    content: string;
-    createdAt: Date;
-    authorId: string; // Add this to check ownership
+import { Post as PrismaPost, Reaction, User as PrismaUser } from "@/lib/generated/prisma/client";
+
+export type Post = PrismaPost & {
     author: {
         name: string | null;
         username: string | null;
         image: string | null;
     };
-}
+    reactions: Reaction[];
+};
 
 interface FeedProps {
     initialPosts: Post[];
@@ -31,7 +33,9 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isPending, startTransition] = useTransition();
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { startUpload } = useUploadThing("imageUploader", {
         onClientUploadComplete: (res) => {
@@ -75,7 +79,27 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
             await createPost(content, image || undefined);
             setContent("");
             setImage(null);
+            setShowEmojiPicker(false);
         });
+    };
+
+    const onEmojiClick = (emojiData: any) => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+
+        const newContent = before + emojiData.emoji + after;
+        setContent(newContent);
+
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
+        }, 0);
     };
 
 
@@ -107,6 +131,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
 
                     <div className="flex-1">
                         <textarea
+                            ref={textareaRef}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             placeholder="What's happening in your mind?"
@@ -161,6 +186,33 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                                 <button className="rounded-full p-2 text-emerald-400 transition hover:bg-emerald-500/10">
                                     <Code2 className="h-5 w-5" />
                                 </button>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        className={`rounded-full p-2 transition ${showEmojiPicker ? 'bg-emerald-500/20 text-emerald-400' : 'text-emerald-400 hover:bg-emerald-500/10'}`}
+                                        title="Add Emoji"
+                                    >
+                                        <Smile className="h-5 w-5" />
+                                    </button>
+
+                                    {showEmojiPicker && (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-30"
+                                                onClick={() => setShowEmojiPicker(false)}
+                                            />
+                                            <div className="absolute bottom-full left-0 mb-2 z-40 shadow-2xl">
+                                                <EmojiPicker
+                                                    onEmojiClick={onEmojiClick}
+                                                    theme={"dark" as any}
+                                                    autoFocusSearch={false}
+                                                    width={300}
+                                                    height={400}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             <button
@@ -183,6 +235,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                             key={post.id}
                             post={post}
                             isOwner={post.authorId === currentUserId}
+                            currentUserId={currentUserId}
                         />
                     ))
                 ) : (

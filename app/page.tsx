@@ -6,13 +6,14 @@ import prisma from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { Post } from "@/components/feed";
 
 export default async function Home() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  const posts = await prisma.post.findMany({
+  const posts: Post[] = await prisma.post.findMany({
     orderBy: {
       createdAt: "desc",
     },
@@ -24,6 +25,7 @@ export default async function Home() {
           image: true,
         },
       },
+      reactions: true,
     },
   });
 

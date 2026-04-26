@@ -95,6 +95,51 @@ export async function updatePost(postId: string, content: string) {
 }
 
 
+export async function toggleReaction(postId: string, type: string = "LIKE") {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const existingReaction = await prisma.reaction.findUnique({
+    where: {
+      postId_userId: {
+        postId,
+        userId: session.user.id,
+      },
+    },
+  });
+
+  if (existingReaction) {
+    if (existingReaction.type === type) {
+      // If same type, remove it (unlike)
+      await prisma.reaction.delete({
+        where: { id: existingReaction.id },
+      });
+    } else {
+      // If different type, update it
+      await prisma.reaction.update({
+        where: { id: existingReaction.id },
+        data: { type },
+      });
+    }
+  } else {
+    // Create new reaction
+    await prisma.reaction.create({
+      data: {
+        postId,
+        userId: session.user.id,
+        type,
+      },
+    });
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+
 
 
 

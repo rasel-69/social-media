@@ -1,29 +1,23 @@
 "use client";
 
-import { MoreHorizontal, Trash2, Edit3, Loader2 } from "lucide-react";
-import { useState, useTransition } from "react";
-import { deletePost, updatePost } from "@/app/actions";
+import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle } from "lucide-react";
+import { useState, useTransition, useRef } from "react";
+import { deletePost, updatePost, toggleReaction } from "@/app/actions";
+import { Post } from "./feed";
 
 interface PostCardProps {
-  post: {
-    id: string;
-    content: string;
-    image?: string | null;
-    createdAt: Date;
-    author: {
-      name: string | null;
-      username: string | null;
-      image: string | null;
-    };
-  };
+  post: Post;
   isOwner?: boolean;
+  currentUserId?: string;
 }
 
-export function PostCard({ post, isOwner }: PostCardProps) {
+export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [isPending, startTransition] = useTransition();
+  const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const reactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const displayName = post.author.name || post.author.username || "Unknown User";
   const initials = post.author.name?.[0] || post.author.username?.[0] || "?";
@@ -57,6 +51,47 @@ export function PostCard({ post, isOwner }: PostCardProps) {
         alert("Failed to update post. Please try again.");
       }
     });
+  };
+
+  const hasReacted = post.reactions.some(r => r.userId === currentUserId);
+  const currentUserReaction = post.reactions.find(r => r.userId === currentUserId);
+  const reactionCount = post.reactions.length;
+
+  const reactions = [
+    { type: "LIKE", label: "Like", emoji: "👍", color: "text-blue-500" },
+    { type: "LOVE", label: "Love", emoji: "❤️", color: "text-red-500" },
+    { type: "HAHA", label: "Haha", emoji: "😂", color: "text-yellow-500" },
+    { type: "CARE", label: "Care", emoji: "🥰", color: "text-pink-500" },
+    { type: "SAD", label: "Sad", emoji: "😢", color: "text-blue-400" },
+  ];
+
+  const currentReactionData = reactions.find(r => r.type === currentUserReaction?.type) || reactions[0];
+
+  const handleToggleReaction = async (type: string = "LIKE") => {
+    if (!currentUserId) return;
+    
+    startTransition(async () => {
+      try {
+        await toggleReaction(post.id, type);
+        setShowReactionMenu(false);
+      } catch (error) {
+        console.error("Reaction failed:", error);
+      }
+    });
+  };
+
+  const handleMouseEnter = () => {
+    if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
+    reactionTimeoutRef.current = setTimeout(() => {
+      setShowReactionMenu(true);
+    }, 500);
+  };
+
+  const handleMouseLeave = () => {
+    if (reactionTimeoutRef.current) clearTimeout(reactionTimeoutRef.current);
+    reactionTimeoutRef.current = setTimeout(() => {
+      setShowReactionMenu(false);
+    }, 500);
   };
 
   return (
@@ -178,6 +213,71 @@ export function PostCard({ post, isOwner }: PostCardProps) {
               />
             </div>
           )}
+
+          {/* Reactions Info - Integrated into the post flow */}
+          {reactionCount > 0 && (
+            <div className="mt-4 flex items-center justify-between px-1">
+              <div className="flex items-center gap-2 group cursor-pointer">
+                <div className="flex -space-x-1.5">
+                  {/* Show top 3 reaction emojis with cleaner styling */}
+                  {Array.from(new Set(post.reactions.map(r => r.type))).slice(0, 3).map((type) => (
+                    <div key={type} className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-950 border border-zinc-800 text-[11px] shadow-sm">
+                      {reactions.find(r => r.type === type)?.emoji}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-sm text-zinc-500 font-medium hover:underline hover:text-zinc-400 transition-colors">
+                  {reactionCount}
+                </span>
+              </div>
+              <div className="text-xs text-zinc-600 font-medium">
+                0 comments
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons - Single line separator for a professional feel */}
+          <div className="mt-3 flex items-center gap-1 border-t border-zinc-900 pt-1.5 relative">
+            <div 
+              className="flex-1 relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              {showReactionMenu && (
+                <div className="absolute bottom-full left-0 mb-2 flex items-center gap-2 rounded-full bg-zinc-900 border border-zinc-800 p-1.5 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 z-30">
+                  {reactions.map((r) => (
+                    <button
+                      key={r.type}
+                      onClick={() => handleToggleReaction(r.type)}
+                      className="group/emoji relative flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-125 hover:-translate-y-1 active:scale-95"
+                    >
+                      <span className="text-2xl">{r.emoji}</span>
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 scale-0 rounded bg-zinc-800 px-2 py-1 text-[10px] font-bold text-white transition-all group-hover/emoji:scale-100">
+                        {r.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() => handleToggleReaction(hasReacted ? currentUserReaction?.type : "LIKE")}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg py-2 transition hover:bg-zinc-900 ${hasReacted ? currentReactionData.color : 'text-zinc-500 hover:text-white'}`}
+              >
+                {hasReacted ? (
+                  <span className="text-xl">{currentReactionData.emoji}</span>
+                ) : (
+                  <Heart className="h-5 w-5" />
+                )}
+                <span className="font-semibold">{hasReacted ? currentReactionData.label : "Like"}</span>
+              </button>
+            </div>
+
+            <button className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white">
+              <MessageCircle className="h-5 w-5" />
+              <span className="font-semibold">Comment</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

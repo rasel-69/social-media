@@ -15,6 +15,9 @@ import {
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 import { authClient } from "@/lib/auth-client"; // Import authClient
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 const CreatePostPage = () => {
   const [content, setContent] = useState("");
@@ -22,7 +25,9 @@ const CreatePostPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   // Get session data
@@ -87,6 +92,26 @@ const CreatePostPage = () => {
     });
   };
 
+  const onEmojiClick = (emojiData: any) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+
+    const newContent = before + emojiData.emoji + after;
+    setContent(newContent);
+
+    // Set focus back to textarea and move cursor
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
+    }, 0);
+  };
+
   // Show a loader while checking session to prevent "flashing" the content
   if (isSessionLoading || !session) {
     return (
@@ -126,6 +151,7 @@ const CreatePostPage = () => {
 
           <div className="flex-1">
             <textarea
+              ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's on your mind?"
@@ -187,9 +213,33 @@ const CreatePostPage = () => {
                   <button className="rounded-full p-2.5 text-emerald-500 transition hover:bg-emerald-500/10">
                     <Code2 className="h-5 w-5" />
                   </button>
-                  <button className="rounded-full p-2.5 text-emerald-500 transition hover:bg-emerald-500/10">
-                    <Smile className="h-5 w-5" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className={`rounded-full p-2.5 transition ${showEmojiPicker ? 'bg-emerald-500/20 text-emerald-400' : 'text-emerald-500 hover:bg-emerald-500/10'}`}
+                      title="Add Emoji"
+                    >
+                      <Smile className="h-5 w-5" />
+                    </button>
+
+                    {showEmojiPicker && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-[60]"
+                          onClick={() => setShowEmojiPicker(false)}
+                        />
+                        <div className="absolute bottom-full left-0 mb-2 z-[70] shadow-2xl">
+                          <EmojiPicker
+                            onEmojiClick={onEmojiClick}
+                            theme={"dark" as any}
+                            autoFocusSearch={false}
+                            width={320}
+                            height={400}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <button className="rounded-full p-2.5 text-emerald-500 transition hover:bg-emerald-500/10">
                     <Calendar className="h-5 w-5" />
                   </button>
