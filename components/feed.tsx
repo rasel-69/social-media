@@ -27,7 +27,11 @@ interface FeedProps {
 }
 
 
+import { authClient } from "@/lib/auth-client";
+
 export function Feed({ initialPosts, currentUserId }: FeedProps) {
+    const { data: session } = authClient.useSession();
+    const initials = session?.user.name?.[0] || "?";
     const [content, setContent] = useState("");
     const [image, setImage] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -106,27 +110,31 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
 
 
 
+
+
     return (
-        <section className="lg:col-span-6 lg:border-r lg:border-zinc-800 h-full overflow-y-auto pb-16 lg:pb-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
+        <section className="col-span-1 lg:col-span-6 lg:border-r lg:border-zinc-800 h-full overflow-y-auto pb-16 lg:pb-0 scrollbar-hide">
             {/* Mobile Header */}
-            <header className="sticky top-0 z-20 flex items-center justify-between border-b border-zinc-800 bg-black/90 px-4 py-4 backdrop-blur lg:px-5">
+            <header className="sticky top-0 z-20 flex items-center justify-between border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur-md lg:px-5">
                 <div className="flex items-center gap-3">
-                    <button className="rounded-full p-2 hover:bg-zinc-900 lg:hidden">
-                        <Menu className="h-5 w-5" />
-                    </button>
-
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 lg:hidden">
+                        {initials}
+                    </div>
                 </div>
+                
+                <h1 className="text-lg font-bold lg:hidden">Home</h1>
 
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 lg:hidden">
-                    0
+                <div className="flex items-center gap-3 lg:hidden">
+                    {/* Placeholder for future mobile header right actions */}
+                    <div className="w-9" /> 
                 </div>
             </header>
 
             {/* Create Post */}
             <div className="border-b border-zinc-800 px-4 py-4 lg:px-5">
                 <div className="flex gap-3">
-                    <div className="hidden h-11 w-11 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 sm:flex">
-                        0
+                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 sm:flex">
+                        {initials}
                     </div>
 
                     <div className="flex-1">

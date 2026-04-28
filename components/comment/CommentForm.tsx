@@ -56,7 +56,7 @@ export function CommentForm({ onSubmit, placeholder = "Write a comment...", init
             <Smile className="w-4 h-4" />
           </button>
           <span className="text-xs text-zinc-500">{content.length}/500</span>
-          
+
           {showEmojiPicker && (
             <div className="absolute top-10 left-0 z-50 shadow-2xl">
               <EmojiPicker
@@ -77,14 +77,14 @@ export function CommentForm({ onSubmit, placeholder = "Write a comment...", init
               size="sm"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="text-zinc-400 hover:text-white"
+              className="text-zinc-400 hover:text-black"
             >
               Cancel
             </Button>
           )}
-          <Button 
-            type="submit" 
-            size="sm" 
+          <Button
+            type="submit"
+            size="sm"
             disabled={!content.trim() || isSubmitting}
             className="bg-white text-black hover:bg-zinc-200"
           >

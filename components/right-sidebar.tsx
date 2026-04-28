@@ -1,5 +1,7 @@
 import { UserFollowCard } from "./user-follow-card";
-import { getSuggestedUsers } from "@/app/actions/follow";
+import { getSuggestedUsersQuery } from "@/lib/follow-queries";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const trendingTopics = [
   { tag: "#React19", posts: "45.2K" },
@@ -9,7 +11,10 @@ const trendingTopics = [
 ];
 
 export async function RightSidebar() {
-  const suggestedUsers = await getSuggestedUsers(5);
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const suggestedUsers = await getSuggestedUsersQuery(session?.user.id, 5);
 
   return (
     <aside className="hidden md:block lg:col-span-3 px-4 py-5 lg:px-5 h-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">

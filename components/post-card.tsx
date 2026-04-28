@@ -183,7 +183,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
                     setIsEditing(false);
                     setEditedContent(post.content);
                   }}
-                  className="px-5 py-2 text-sm font-semibold text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-zinc-800"
+                  className="px-5 py-2 text-sm font-semibold text-zinc-400 hover:text-black transition-colors rounded-full hover:bg-zinc-200"
                 >
                   Cancel
                 </button>

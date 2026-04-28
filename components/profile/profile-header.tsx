@@ -152,12 +152,36 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
       {/* Followers/Following Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden bg-black border-zinc-800">
-          <DialogHeader className="p-4 border-b border-zinc-800">
-            <DialogTitle className="text-center text-xl font-bold">
-              {modalType === "followers" ? "Followers" : "Following"}
+          <DialogHeader className="p-0 border-b border-zinc-800">
+            <DialogTitle className="sr-only">
+              {modalType === "followers" ? `Followers of ${displayName}` : `${displayName}'s Following`}
             </DialogTitle>
+            <div className="flex">
+              <button
+                onClick={() => setModalType("followers")}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
+                  modalType === "followers" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                }`}
+              >
+                Followers
+                {modalType === "followers" && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-emerald-500 rounded-t-full" />
+                )}
+              </button>
+              <button
+                onClick={() => setModalType("following")}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
+                  modalType === "following" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                }`}
+              >
+                Following
+                {modalType === "following" && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-emerald-500 rounded-t-full" />
+                )}
+              </button>
+            </div>
           </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto scrollbar-hide">
+          <div className="max-h-[70vh] min-h-[40vh] overflow-y-auto scrollbar-hide">
             <ProfileUserList 
               userId={user.id} 
               type={modalType} 

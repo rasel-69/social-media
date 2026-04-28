@@ -4,6 +4,7 @@ import prisma from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getSuggestedUsersQuery, getUserFollowersQuery, getUserFollowingQuery } from "@/lib/follow-queries";
 
 export async function followUser(targetUserId: string) {
   const session = await auth.api.getSession({
@@ -61,93 +62,40 @@ export async function checkIsFollowing(targetUserId: string) {
   return !!follow;
 }
 
+export async function checkMultipleFollowStatus(targetUserIds: string[]) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || targetUserIds.length === 0) return {};
+
+  const follows = await prisma.follow.findMany({
+    where: {
+      followerId: session.user.id,
+      followingId: { in: targetUserIds },
+    },
+    select: { followingId: true },
+  });
+
+  const followMap: Record<string, boolean> = {};
+  targetUserIds.forEach(id => followMap[id] = false);
+  follows.forEach(f => followMap[f.followingId] = true);
+
+  return followMap;
+}
+
 export async function getSuggestedUsers(limit: number = 5) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (!session) {
-    // If not logged in, just return some random users
-    return prisma.user.findMany({
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        image: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  }
-
-  // Get users the current user is already following
-  const following = await prisma.follow.findMany({
-    where: { followerId: session.user.id },
-    select: { followingId: true },
-  });
-
-  const followingIds = following.map((f) => f.followingId);
-
-  // Return users not followed by the current user, excluding themselves
-  return prisma.user.findMany({
-    where: {
-      id: {
-        notIn: [...followingIds, session.user.id],
-      },
-    },
-    take: limit,
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      image: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  return getSuggestedUsersQuery(session?.user.id, limit);
 }
 
 export async function getUserFollowers(userId: string) {
-  const followers = await prisma.follow.findMany({
-    where: { followingId: userId },
-    include: {
-      follower: {
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return followers.map(f => f.follower);
+  return getUserFollowersQuery(userId);
 }
 
 export async function getUserFollowing(userId: string) {
-  const following = await prisma.follow.findMany({
-    where: { followerId: userId },
-    include: {
-      following: {
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return following.map(f => f.following);
+  return getUserFollowingQuery(userId);
 }
