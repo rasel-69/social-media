@@ -1,5 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@/lib/generated/prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 
 const adapter = new PrismaPg({
@@ -12,6 +12,7 @@ declare const globalThis: {
   prismaGlobalV3: ReturnType<typeof prismaClientSingleton>;
 } & typeof global;
 
+// Force reload after schema update
 const prisma = globalThis.prismaGlobalV3 ?? prismaClientSingleton();
 
 if (process.env.NODE_ENV !== 'production') {

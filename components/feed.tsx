@@ -10,7 +10,15 @@ import dynamic from 'next/dynamic';
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 
-import { Post as PrismaPost, Reaction, User as PrismaUser } from "@/lib/generated/prisma/client";
+import type { Post as PrismaPost, User as PrismaUser } from "@prisma/client";
+
+export type Reaction = {
+    id: string;
+    postId: string;
+    userId: string;
+    type: string;
+    createdAt: Date;
+};
 
 export type Post = PrismaPost & {
     author: {

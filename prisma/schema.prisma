@@ -5,7 +5,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma/client"
 }
 
 datasource db {
@@ -22,6 +21,10 @@ model User {
   updatedAt     DateTime  @updatedAt
   username      String?   @unique
   phoneNumber   String?   @unique
+  bio           String?
+  study         String?
+  work          String?
+  address       String?
   sessions      Session[]
   accounts      Account[]
   posts         Post[]

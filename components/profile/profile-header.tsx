@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft } from "lucide-react";
-import { User } from "@/lib/generated/prisma/client";
+import type { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/follow";
 import { Button } from "@/components/ui/button";
