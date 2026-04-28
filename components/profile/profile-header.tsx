@@ -1,19 +1,59 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft } from "lucide-react";
 import { User } from "@/lib/generated/prisma/client";
 import { useRouter } from "next/navigation";
+import { followUser, unfollowUser } from "@/app/actions/follow";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ProfileUserList } from "./profile-user-list";
 
 interface ProfileHeaderProps {
   user: any; // Using any for now to include _count
   isOwnProfile: boolean;
+  initialIsFollowing?: boolean;
+  currentUserId?: string;
 }
 
-export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
+export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, currentUserId }: ProfileHeaderProps) {
   const router = useRouter();
   const displayName = user.name || user.username || "User";
   const username = user.username || user.id;
   const initials = displayName[0].toUpperCase();
+
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [isPending, startTransition] = useTransition();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"followers" | "following">("followers");
+
+  const openModal = (type: "followers" | "following") => {
+    setModalType(type);
+    setModalOpen(true);
+  };
+
+  const handleToggleFollow = () => {
+    const newValue = !isFollowing;
+    setIsFollowing(newValue);
+
+    startTransition(async () => {
+      try {
+        if (newValue) {
+          await followUser(user.id);
+        } else {
+          await unfollowUser(user.id);
+        }
+      } catch (error) {
+        console.error("Error toggling follow:", error);
+        setIsFollowing(!newValue);
+      }
+    });
+  };
 
   return (
     <div className="relative border-b border-zinc-800">
@@ -62,9 +102,18 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
                 Edit Profile
               </button>
             ) : (
-              <button className="rounded-full bg-emerald-500 px-6 py-2 text-sm font-bold text-black transition hover:bg-emerald-400">
-                Follow
-              </button>
+              <Button
+                variant={isFollowing ? "outline" : "default"}
+                className={`rounded-full px-6 py-2 text-sm font-bold transition ${
+                  isFollowing
+                    ? "border-zinc-700 bg-transparent text-white hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
+                    : "bg-emerald-500 text-black hover:bg-emerald-400"
+                }`}
+                onClick={handleToggleFollow}
+                disabled={isPending}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
             )}
           </div>
         </div>
@@ -83,16 +132,40 @@ export function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
         </div>
 
         <div className="mt-4 flex gap-6">
-          <div className="flex items-center gap-1 cursor-pointer hover:underline">
+          <div 
+            onClick={() => openModal("following")}
+            className="flex items-center gap-1 cursor-pointer hover:underline"
+          >
             <span className="font-bold text-white">{user._count?.following || 0}</span>
             <span className="text-zinc-500">Following</span>
           </div>
-          <div className="flex items-center gap-1 cursor-pointer hover:underline">
+          <div 
+            onClick={() => openModal("followers")}
+            className="flex items-center gap-1 cursor-pointer hover:underline"
+          >
             <span className="font-bold text-white">{user._count?.followers || 0}</span>
-            <span className="text-zinc-500">Friends</span>
+            <span className="text-zinc-500">Followers</span>
           </div>
         </div>
       </div>
+
+      {/* Followers/Following Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden bg-black border-zinc-800">
+          <DialogHeader className="p-4 border-b border-zinc-800">
+            <DialogTitle className="text-center text-xl font-bold">
+              {modalType === "followers" ? "Followers" : "Following"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto scrollbar-hide">
+            <ProfileUserList 
+              userId={user.id} 
+              type={modalType} 
+              currentUserId={currentUserId} 
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

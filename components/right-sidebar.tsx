@@ -1,6 +1,5 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
+import { UserFollowCard } from "./user-follow-card";
+import { getSuggestedUsers } from "@/app/actions/follow";
 
 const trendingTopics = [
   { tag: "#React19", posts: "45.2K" },
@@ -9,13 +8,9 @@ const trendingTopics = [
   { tag: "#TypeScript", posts: "15.8K" },
 ];
 
-const suggestedUsers = [
-  { name: "User 1", username: "@dev_user1", initials: "U1" },
-  { name: "User 2", username: "@dev_user2", initials: "U2" },
-  { name: "User 3", username: "@dev_user3", initials: "U3" },
-];
+export async function RightSidebar() {
+  const suggestedUsers = await getSuggestedUsers(5);
 
-export function RightSidebar() {
   return (
     <aside className="hidden md:block lg:col-span-3 px-4 py-5 lg:px-5 h-full overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
       <div className="space-y-5">
@@ -47,32 +42,18 @@ export function RightSidebar() {
           </h2>
 
           <div className="space-y-4">
-            {suggestedUsers.map((user) => (
-              <div
-                key={user.username}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-emerald-400">
-                    {user.initials}
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold">{user.name}</h3>
-                    <p className="text-xs text-zinc-500">
-                      {user.username}
-                    </p>
-                  </div>
-                </div>
-
-                <Button variant="outline" className="rounded-full bg-white text-black hover:bg-zinc-200 border-none h-8 px-4 font-bold">
-                  Follow
-                </Button>
-              </div>
-            ))}
+            {suggestedUsers.length > 0 ? (
+              suggestedUsers.map((user) => (
+                <UserFollowCard key={user.id} user={user} initialIsFollowing={false} />
+              ))
+            ) : (
+              <p className="text-sm text-zinc-500">No suggestions right now.</p>
+            )}
           </div>
         </div>
       </div>
     </aside>
   );
 }
+
+

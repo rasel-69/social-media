@@ -66,7 +66,7 @@ export default async function Home() {
               </Link>
             );
           })}
-          
+
           {session ? (
             <Link
               href={`/Profile/${session.user.username || session.user.id}`}

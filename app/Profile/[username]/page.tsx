@@ -5,7 +5,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/profile-header";
-import { ProfileTabs } from "@/components/profile/profile-tabs"
+import { ProfileTabs } from "@/components/profile/profile-tabs";
+import { checkIsFollowing } from "@/app/actions/follow";
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const { username } = await params;
@@ -48,6 +49,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
   }
 
   const isOwnProfile = session?.user.id === user.id;
+  const initialIsFollowing = !isOwnProfile && session ? await checkIsFollowing(user.id) : false;
 
   return (
     <main className="h-screen bg-black text-white overflow-hidden">
@@ -57,7 +59,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
         {/* Profile Content */}
         <div className="col-span-1 h-full overflow-y-auto border-r border-zinc-800 lg:col-span-6 pb-20 lg:pb-0 scrollbar-hide">
-          <ProfileHeader user={user} isOwnProfile={isOwnProfile} />
+          <ProfileHeader user={user} isOwnProfile={isOwnProfile} initialIsFollowing={initialIsFollowing} currentUserId={session?.user.id} />
           <ProfileTabs user={user} isOwnProfile={isOwnProfile} currentUserId={session?.user.id} />
         </div>
 
