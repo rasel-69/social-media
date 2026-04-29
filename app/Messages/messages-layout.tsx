@@ -5,13 +5,15 @@ import { ConversationList } from "./conversation-list";
 import { ChatArea } from "./chat-area";
 import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getOrCreateConversation } from "@/app/actions/message";
 
 interface MessagesLayoutProps {
   initialConversations: any[];
   currentUserId: string;
+  friends: any[];
 }
 
-export function MessagesLayout({ initialConversations, currentUserId }: MessagesLayoutProps) {
+export function MessagesLayout({ initialConversations, currentUserId, friends }: MessagesLayoutProps) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeConversation, setActiveConversation] = useState<any | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -36,6 +38,21 @@ export function MessagesLayout({ initialConversations, currentUserId }: Messages
       setConversations(prev => 
         prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c)
       );
+    }
+  };
+
+  const handleStartChat = async (friendId: string) => {
+    const res = await getOrCreateConversation(friendId);
+    if (res.success && res.conversation) {
+      // Check if conversation already in list
+      setConversations(prev => {
+        const exists = prev.find(c => c.id === res.conversation.id);
+        if (!exists) {
+          return [res.conversation, ...prev];
+        }
+        return prev;
+      });
+      handleSelectConversation(res.conversation);
     }
   };
 
@@ -66,6 +83,8 @@ export function MessagesLayout({ initialConversations, currentUserId }: Messages
           activeId={activeConversation?.id} 
           onSelect={handleSelectConversation}
           isMobile={isMobile}
+          friends={friends}
+          onStartChat={handleStartChat}
         />
       </div>
 

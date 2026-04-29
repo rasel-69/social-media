@@ -69,7 +69,11 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
         
         const data = await res.json();
         if (data.messages && data.messages.length > 0) {
-          setMessages(prev => [...prev, ...data.messages]);
+          setMessages(prev => {
+            const newMessages = data.messages.filter((m: any) => !prev.some(p => p.id === m.id));
+            if (newMessages.length === 0) return prev;
+            return [...prev, ...newMessages];
+          });
           setLastMessageId(data.messages[data.messages.length - 1].id);
           
           // Notify parent (layout) to update sidebar
@@ -85,7 +89,10 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
   }, [conversationId, lastMessageId, onMessageAdded]);
 
   const handleNewMessage = (newMessage: any) => {
-    setMessages(prev => [...prev, newMessage]);
+    setMessages(prev => {
+      if (prev.some(p => p.id === newMessage.id)) return prev;
+      return [...prev, newMessage];
+    });
     setLastMessageId(newMessage.id);
     onMessageAdded(newMessage);
   };
@@ -149,7 +156,7 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
               return (
                 <div key={msg.id} className="flex flex-col">
                   {showTime && (
-                    <div className="text-center text-xs text-zinc-500 my-4">
+                    <div className="text-center text-xs text-zinc-500 my-4" suppressHydrationWarning>
                       {format(msgDate, "MMM d, h:mm a")}
                     </div>
                   )}

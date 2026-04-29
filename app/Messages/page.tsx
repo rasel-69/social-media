@@ -1,5 +1,6 @@
 import { MainLayout } from "@/components/main-layout";
 import { getConversations } from "@/app/actions/message";
+import { getUserFriends } from "@/app/actions/friend";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { MessagesLayout } from "./messages-layout";
@@ -14,7 +15,10 @@ export default async function MessagesPage() {
     redirect("/login");
   }
 
-  const conversations = await getConversations();
+  const [conversations, friends] = await Promise.all([
+    getConversations(),
+    getUserFriends(session.user.id)
+  ]);
 
   return (
     <MainLayout>
@@ -22,6 +26,7 @@ export default async function MessagesPage() {
         <MessagesLayout 
           initialConversations={conversations} 
           currentUserId={session.user.id} 
+          friends={friends}
         />
       </div>
     </MainLayout>

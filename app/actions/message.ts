@@ -72,7 +72,6 @@ export async function getOrCreateConversation(friendId: string) {
     if (!isFriend) {
       throw new Error("You can only message your friends");
     }
-
     // Check if conversation exists
     let conversation = await prisma.conversation.findFirst({
       where: {
@@ -80,6 +79,14 @@ export async function getOrCreateConversation(friendId: string) {
           { user1Id: currentUserId, user2Id: friendId },
           { user1Id: friendId, user2Id: currentUserId },
         ],
+      },
+      include: {
+        user1: { select: { id: true, name: true, username: true, image: true } },
+        user2: { select: { id: true, name: true, username: true, image: true } },
+        messages: {
+          where: { isRead: false, senderId: { not: currentUserId } },
+          select: { id: true },
+        },
       },
     });
 
@@ -89,10 +96,27 @@ export async function getOrCreateConversation(friendId: string) {
           user1Id: currentUserId,
           user2Id: friendId,
         },
+        include: {
+          user1: { select: { id: true, name: true, username: true, image: true } },
+          user2: { select: { id: true, name: true, username: true, image: true } },
+          messages: {
+            where: { isRead: false, senderId: { not: currentUserId } },
+            select: { id: true },
+          },
+        },
       });
     }
 
-    return { success: true, conversationId: conversation.id };
+    const otherUser = conversation.user1Id === currentUserId ? conversation.user2 : conversation.user1;
+    const formattedConversation = {
+      id: conversation.id,
+      user: otherUser,
+      lastMessage: conversation.lastMessage,
+      lastMsgAt: conversation.lastMsgAt,
+      unreadCount: conversation.messages.length,
+    };
+
+    return { success: true, conversation: formattedConversation };
   } catch (error: any) {
     console.error("Error in getOrCreateConversation:", error);
     return { success: false, error: error.message || "Failed to initiate chat" };
