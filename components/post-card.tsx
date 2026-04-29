@@ -12,22 +12,27 @@ import { SharedPost } from "./post/shared-post";
 import { ShareDialog } from "./post/share-dialog";
 import { ReactionButton } from "./post/reaction-button";
 import { PostMenu } from "./post/post-menu";
+import { ReactionDialog } from "./post/reaction-dialog";
 
 interface PostCardProps {
   post: Post;
   isOwner?: boolean;
   currentUserId?: string;
   onDelete?: (postId: string) => void;
+  initialShowComments?: boolean;
+  initialShowShare?: boolean;
 }
 
-export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardProps) {
+
+export function PostCard({ post, isOwner, currentUserId, onDelete, initialShowComments = false, initialShowShare = false }: PostCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content || "");
   const [isPending, startTransition] = useTransition();
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(initialShowComments);
   const [commentCount, setCommentCount] = useState((post as any)._count?.comments || (post as any).comments?.length || 0);
   const [shareCount, setShareCount] = useState((post as any)._count?.shares || (post as any).shares?.length || 0);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(initialShowShare);
+  const [isReactionModalOpen, setIsReactionModalOpen] = useState(false);
   const router = useRouter();
 
   const { data: session } = authClient.useSession();
@@ -130,11 +135,17 @@ export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardPro
 
           {post.sharedPost && <SharedPost post={post.sharedPost as any} />}
 
-          {/* Stats */}
           {(post.reactions.length > 0 || commentCount > 0 || shareCount > 0) && (
             <div className="mt-4 flex items-center justify-between px-1">
               <div className="text-sm text-zinc-500 font-medium">
-                {post.reactions.length > 0 && <span>{post.reactions.length} reactions</span>}
+                {post.reactions.length > 0 && (
+                  <button 
+                    onClick={() => setIsReactionModalOpen(true)}
+                    className="hover:underline hover:text-emerald-400 transition-colors"
+                  >
+                    {post.reactions.length} reactions
+                  </button>
+                )}
               </div>
               <div className="flex gap-3 text-xs text-zinc-600 font-medium">
                 {commentCount > 0 && <button onClick={() => setShowComments(!showComments)} className="hover:underline">{commentCount} comments</button>}
@@ -196,6 +207,12 @@ export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardPro
           onSuccess={() => setShareCount((prev: number) => prev + 1)}
         />
       )}
+
+      <ReactionDialog 
+        isOpen={isReactionModalOpen}
+        onOpenChange={setIsReactionModalOpen}
+        postId={post.id}
+      />
     </div>
   );
 }

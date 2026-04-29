@@ -5,6 +5,7 @@ import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft, Loader2 } 
 import type { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/follow";
+import { sendFriendRequest, acceptFriendRequest, rejectFriendRequest, cancelFriendRequest, removeFriend, FriendStatus } from "@/app/actions/friend";
 import { updateUserProfileImage, updateUserCoverImage } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "sonner";
@@ -16,26 +17,29 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProfileUserList } from "./profile-user-list";
+import { ProfileFriendsList } from "./profile-friends-list";
 
 interface ProfileHeaderProps {
   user: any; // Using any for now to include _count
   isOwnProfile: boolean;
   initialIsFollowing?: boolean;
+  initialFriendStatus?: FriendStatus;
   currentUserId?: string;
 }
 
-export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, currentUserId }: ProfileHeaderProps) {
+export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, initialFriendStatus = "NONE", currentUserId }: ProfileHeaderProps) {
   const router = useRouter();
   const displayName = user.name || user.username || "User";
   const username = user.username || user.id;
   const initials = displayName[0].toUpperCase();
 
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [friendStatus, setFriendStatus] = useState<FriendStatus>(initialFriendStatus);
   const [isPending, startTransition] = useTransition();
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"followers" | "following">("followers");
+  const [modalType, setModalType] = useState<"followers" | "following" | "friends">("followers");
 
-  const openModal = (type: "followers" | "following") => {
+  const openModal = (type: "followers" | "following" | "friends") => {
     setModalType(type);
     setModalOpen(true);
   };
@@ -54,6 +58,33 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
       } catch (error) {
         console.error("Error toggling follow:", error);
         setIsFollowing(!newValue);
+      }
+    });
+  };
+
+  const handleFriendAction = () => {
+    if (!currentUserId) {
+      router.push("/login");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        if (friendStatus === "NONE") {
+          await sendFriendRequest(user.id);
+          setFriendStatus("PENDING_SENT");
+        } else if (friendStatus === "PENDING_SENT") {
+          await cancelFriendRequest(user.id);
+          setFriendStatus("NONE");
+        } else if (friendStatus === "PENDING_RECEIVED") {
+          await acceptFriendRequest(user.id);
+          setFriendStatus("FRIENDS");
+        } else if (friendStatus === "FRIENDS") {
+          await removeFriend(user.id);
+          setFriendStatus("NONE");
+        }
+      } catch (error) {
+        console.error("Error handling friend action:", error);
       }
     });
   };
@@ -190,24 +221,42 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
             )}
           </div>
 
-          <div className="mb-2">
+          <div className="mb-2 flex gap-2">
             {isOwnProfile ? (
               <button className="rounded-full border border-zinc-700 px-6 py-2 text-sm font-bold transition hover:bg-zinc-900">
                 Edit Profile
               </button>
             ) : (
-              <Button
-                variant={isFollowing ? "outline" : "default"}
-                className={`rounded-full px-6 py-2 text-sm font-bold transition ${
-                  isFollowing
-                    ? "border-zinc-700 bg-transparent text-white hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
-                    : "bg-emerald-500 text-black hover:bg-emerald-400"
-                }`}
-                onClick={handleToggleFollow}
-                disabled={isPending}
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </Button>
+              <>
+                <Button
+                  variant={friendStatus === "NONE" ? "default" : "outline"}
+                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${
+                    friendStatus === "NONE"
+                      ? "bg-emerald-500 text-black hover:bg-emerald-400"
+                      : "border-zinc-700 bg-transparent text-white hover:bg-zinc-900"
+                  }`}
+                  onClick={handleFriendAction}
+                  disabled={isPending}
+                >
+                  {friendStatus === "NONE" && "Add Friend"}
+                  {friendStatus === "PENDING_SENT" && "Cancel Request"}
+                  {friendStatus === "PENDING_RECEIVED" && "Accept Request"}
+                  {friendStatus === "FRIENDS" && "Friends"}
+                </Button>
+                
+                <Button
+                  variant={isFollowing ? "outline" : "secondary"}
+                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${
+                    isFollowing
+                      ? "border-zinc-700 bg-transparent text-white hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
+                      : "bg-zinc-800 text-white hover:bg-zinc-700"
+                  }`}
+                  onClick={handleToggleFollow}
+                  disabled={isPending}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -227,6 +276,13 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
 
         <div className="mt-4 flex gap-6">
           <div 
+            onClick={() => openModal("friends")}
+            className="flex items-center gap-1 cursor-pointer hover:underline"
+          >
+            <span className="font-bold text-white">{(user._count?.friendships1 || 0) + (user._count?.friendships2 || 0)}</span>
+            <span className="text-zinc-500">Friends</span>
+          </div>
+          <div 
             onClick={() => openModal("following")}
             className="flex items-center gap-1 cursor-pointer hover:underline"
           >
@@ -243,14 +299,25 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
         </div>
       </div>
 
-      {/* Followers/Following Modal */}
+      {/* Followers/Following/Friends Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md p-0 overflow-hidden bg-black border-zinc-800">
           <DialogHeader className="p-0 border-b border-zinc-800">
             <DialogTitle className="sr-only">
-              {modalType === "followers" ? `Followers of ${displayName}` : `${displayName}'s Following`}
+              Connections
             </DialogTitle>
             <div className="flex">
+              <button
+                onClick={() => setModalType("friends")}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
+                  modalType === "friends" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                }`}
+              >
+                Friends
+                {modalType === "friends" && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-emerald-500 rounded-t-full" />
+                )}
+              </button>
               <button
                 onClick={() => setModalType("followers")}
                 className={`flex-1 py-4 text-sm font-bold transition-all relative ${
@@ -276,11 +343,17 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
             </div>
           </DialogHeader>
           <div className="max-h-[70vh] min-h-[40vh] overflow-y-auto scrollbar-hide">
-            <ProfileUserList 
-              userId={user.id} 
-              type={modalType} 
-              currentUserId={currentUserId} 
-            />
+            {modalType === "friends" ? (
+              <div className="p-2">
+                <ProfileFriendsList userId={user.id} />
+              </div>
+            ) : (
+              <ProfileUserList 
+                userId={user.id} 
+                type={modalType} 
+                currentUserId={currentUserId} 
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>

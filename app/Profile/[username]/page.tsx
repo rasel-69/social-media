@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/main-layout";
 import prisma from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -6,6 +7,7 @@ import { notFound } from "next/navigation";
 import { ProfileHeader } from "@/components/profile/profile-header";
 import { ProfileTabs } from "@/components/profile/profile-tabs";
 import { checkIsFollowing } from "@/app/actions/follow";
+import { getFriendStatus } from "@/app/actions/friend";
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const { username } = await params;
@@ -23,6 +25,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
           followers: true,
           following: true,
           posts: true,
+          friendships1: true,
+          friendships2: true,
         },
       },
     },
@@ -37,6 +41,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
             followers: true,
             following: true,
             posts: true,
+            friendships1: true,
+            friendships2: true,
           },
         },
       },
@@ -49,10 +55,11 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   const isOwnProfile = session?.user.id === user.id;
   const initialIsFollowing = !isOwnProfile && session ? await checkIsFollowing(user.id) : false;
+  const friendStatus = !isOwnProfile && session ? await getFriendStatus(user.id) : "NONE";
 
   return (
     <MainLayout>
-      <ProfileHeader user={user} isOwnProfile={isOwnProfile} initialIsFollowing={initialIsFollowing} currentUserId={session?.user.id} />
+      <ProfileHeader user={user} isOwnProfile={isOwnProfile} initialIsFollowing={initialIsFollowing} initialFriendStatus={friendStatus} currentUserId={session?.user.id} />
       <ProfileTabs user={user} isOwnProfile={isOwnProfile} currentUserId={session?.user.id} />
     </MainLayout>
   );

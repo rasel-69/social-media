@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { LogOut, LayoutGrid, UserCircle, Image as ImageIcon, Users } from "lucide-react";
 import { AboutTab } from "./about-tab";
+import { ProfileFriendsList } from "./profile-friends-list";
 
 interface ProfileTabsProps {
   user: any;
@@ -75,13 +76,7 @@ export function ProfileTabs({ user, isOwnProfile, currentUserId }: ProfileTabsPr
           <ProfileFeed userId={user.id} type="photos" currentUserId={currentUserId} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === "Friends" && (
-          <div className="p-8 text-center text-zinc-500">
-             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-900">
-                <Users className="h-8 w-8 text-emerald-500" />
-             </div>
-             <h3 className="text-xl font-bold text-white mb-2">Friends</h3>
-             <p>Friend list feature coming soon!</p>
-          </div>
+          <ProfileFriendsList userId={user.id} />
         )}
       </div>
     </div>

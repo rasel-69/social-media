@@ -163,6 +163,29 @@ export async function toggleReaction(postId: string, type: string = "LIKE") {
   }
 }
 
+export async function getPostReactions(postId: string) {
+  try {
+    const reactions = await prisma.reaction.findMany({
+      where: { postId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return reactions;
+  } catch (error) {
+    console.error("Error in getPostReactions:", error);
+    return [];
+  }
+}
+
 export async function getUserPosts(userId: string) {
   try {
     // Reading posts can be public, but we ensure we don't return sensitive data
@@ -198,6 +221,46 @@ export async function getUserPosts(userId: string) {
   } catch (error) {
     console.error("Error in getUserPosts:", error);
     return [];
+  }
+}
+
+export async function getPost(postId: string) {
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        author: {
+          select: {
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+        reactions: true,
+        sharedPost: {
+          include: {
+            author: {
+              select: {
+                name: true,
+                username: true,
+                image: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            shares: true,
+          }
+        }
+      },
+    });
+
+    return post;
+  } catch (error) {
+    console.error("Error in getPost:", error);
+    return null;
   }
 }
 
@@ -468,6 +531,7 @@ export async function getNotifications() {
         },
         post: {
           select: {
+            id: true,
             content: true,
             image: true,
           }

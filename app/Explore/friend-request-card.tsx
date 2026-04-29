@@ -1,0 +1,135 @@
+"use client";
+
+import Link from "next/link";
+import { Check, X, Loader2 } from "lucide-react";
+import { useState, useTransition } from "react";
+import { acceptFriendRequest, rejectFriendRequest } from "@/app/actions/friend";
+import { toast } from "sonner";
+
+interface FriendRequestCardProps {
+  user: {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+  };
+  createdAt: Date;
+}
+
+export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
+  const [isPendingAccept, startAccept] = useTransition();
+  const [isPendingReject, startReject] = useTransition();
+  const [status, setStatus] = useState<"pending" | "accepted" | "rejected">("pending");
+
+  const handleAccept = () => {
+    startAccept(async () => {
+      const res = await acceptFriendRequest(user.id);
+      if (res.success) {
+        setStatus("accepted");
+        toast.success(`You and ${user.name} are now friends!`);
+      } else {
+        toast.error(res.error || "Failed to accept request");
+      }
+    });
+  };
+
+  const handleReject = () => {
+    startReject(async () => {
+      const res = await rejectFriendRequest(user.id);
+      if (res.success) {
+        setStatus("rejected");
+        toast.success("Friend request removed");
+      } else {
+        toast.error(res.error || "Failed to remove request");
+      }
+    });
+  };
+
+  const timeAgo = getTimeAgo(createdAt);
+
+  if (status === "rejected") {
+    return null; // Hide the card after rejecting
+  }
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col transition hover:border-zinc-700 hover:shadow-lg hover:shadow-emerald-500/5">
+      <Link
+        href={`/Profile/${user.username || user.id}`}
+        className="block relative h-24 bg-gradient-to-r from-blue-900/30 via-zinc-800 to-purple-900/30"
+      >
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
+          <div className="h-16 w-16 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-xl shadow-lg">
+            {user.image ? (
+              <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              user.name?.[0]?.toUpperCase() || "?"
+            )}
+          </div>
+        </div>
+      </Link>
+
+      <div className="flex-1 px-4 pt-10 pb-4 flex flex-col items-center text-center">
+        <Link
+          href={`/Profile/${user.username || user.id}`}
+          className="font-bold text-white hover:underline line-clamp-1"
+        >
+          {user.name}
+        </Link>
+        <p className="text-xs text-zinc-500 line-clamp-1">@{user.username || "user"}</p>
+        <p className="text-[11px] text-zinc-600 mt-1">{timeAgo}</p>
+
+        {status === "accepted" ? (
+          <div className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold bg-emerald-500/10 text-emerald-400 flex items-center justify-center gap-2 border border-emerald-500/20">
+            <Check className="h-4 w-4" />
+            Friends
+          </div>
+        ) : (
+          <div className="mt-4 w-full flex flex-col gap-2">
+            <button
+              onClick={handleAccept}
+              disabled={isPendingAccept || isPendingReject}
+              className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg shadow-emerald-500/20 active:scale-[0.97] transition disabled:opacity-50"
+            >
+              {isPendingAccept ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Confirm
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleReject}
+              disabled={isPendingAccept || isPendingReject}
+              className="w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 active:scale-[0.97] transition disabled:opacity-50"
+            >
+              {isPendingReject ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <X className="h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - new Date(date).getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
