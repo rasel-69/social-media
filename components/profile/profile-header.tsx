@@ -5,7 +5,7 @@ import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft, Loader2 } 
 import type { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/follow";
-import { updateUserProfileImage } from "@/app/actions";
+import { updateUserProfileImage, updateUserCoverImage } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,35 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
     }
   };
 
+  const { startUpload: startCoverUpload, isUploading: isUploadingCover } = useUploadThing("imageUploader", {
+    onClientUploadComplete: async (res) => {
+      const url = res?.[0].url;
+      if (url) {
+        await updateUserCoverImage(url);
+        toast.success("Cover photo updated!");
+        router.refresh();
+      }
+    },
+    onUploadError: (error) => {
+      toast.error(`Cover upload failed: ${error.message}`);
+    },
+  });
+
+  const handleCoverClick = () => {
+    if (isOwnProfile && !isUploadingCover) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          startCoverUpload([file]);
+        }
+      };
+      input.click();
+    }
+  };
+
   return (
     <div className="relative border-b border-zinc-800">
       {/* Sticky Header */}
@@ -104,10 +133,29 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
       </div>
 
       {/* Cover Image */}
-      <div className="h-48 w-full bg-gradient-to-r from-emerald-900/40 via-zinc-900 to-emerald-900/40 lg:h-64 relative group">
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-           {isOwnProfile && <Camera className="text-white h-8 w-8" />}
+      <div 
+        onClick={handleCoverClick}
+        className={`h-48 w-full bg-gradient-to-r from-emerald-900/40 via-zinc-900 to-emerald-900/40 lg:h-64 relative group overflow-hidden ${isOwnProfile ? "cursor-pointer" : ""}`}
+      >
+        {user.coverImage ? (
+           <img src={user.coverImage} alt="Cover" className="h-full w-full object-cover" />
+        ) : null}
+        
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+           {isOwnProfile && (
+             isUploadingCover ? (
+                <Loader2 className="text-white h-8 w-8 animate-spin" />
+             ) : (
+                <Camera className="text-white h-8 w-8" />
+             )
+           )}
         </div>
+
+        {isUploadingCover && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+            <Loader2 className="text-emerald-500 h-10 w-10 animate-spin" />
+          </div>
+        )}
       </div>
 
       {/* Profile Info Section */}

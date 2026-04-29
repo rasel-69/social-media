@@ -10,6 +10,9 @@ export const authClient = createAuthClient({
             phoneNumber: {
                 type: "string",
             },
+            coverImage: {
+                type: "string",
+            },
         },
     },
 });

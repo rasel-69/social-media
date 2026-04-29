@@ -308,3 +308,19 @@ export async function updateUserProfileImage(imageUrl: string) {
   // Revalidating the base profile and root is usually enough, but let's try to be specific.
   return { success: true };
 }
+
+export async function updateUserCoverImage(imageUrl: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { coverImage: imageUrl },
+  });
+
+  revalidatePath("/");
+  return { success: true };
+}

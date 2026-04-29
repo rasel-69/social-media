@@ -20,6 +20,10 @@ export const auth = betterAuth({
                 type: "string",
                 required: false,
             },
+            coverImage: {
+                type: "string",
+                required: false,
+            },
         },
     },
     socialProviders: {
