@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { User } from "@/lib/auth-types";
+import { toast } from "sonner";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -31,6 +32,14 @@ export function Sidebar() {
     if (!session) {
       e.preventDefault(); // Stop the <Link> from navigating directly
       router.push("/login?callbackURL=/Post/new");
+    }
+  };
+
+  const handleProfileRedirect = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault();
+      toast.error("Please login");
+      router.push("/login?callbackURL=/Profile");
     }
   };
 
@@ -76,6 +85,7 @@ export function Sidebar() {
 
           <Link
             href={session ? `/Profile/${user?.username || session.user.id}` : "/Profile"}
+            onClick={handleProfileRedirect}
             className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname.startsWith("/Profile") ? "text-emerald-400" : "text-white"}`}
           >
             <UserIcon className="h-6 w-6" />

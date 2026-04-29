@@ -63,10 +63,7 @@ export function AboutTab({ user, isOwnProfile }: AboutTabProps) {
         {/* Header Section */}
         <div className="flex justify-between items-start">
           <div className="space-y-1">
-            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-              <UserCircle className="h-6 w-6 text-emerald-500" />
-              About {user.name}
-            </h3>
+
             <p className="text-zinc-400">
               {user.bio || (isOwnProfile ? "Add a bio to tell people more about yourself." : "No bio added yet.")}
             </p>
@@ -75,9 +72,9 @@ export function AboutTab({ user, isOwnProfile }: AboutTabProps) {
           {isOwnProfile && (
             <Dialog open={isEditing} onOpenChange={setIsEditing}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="border-zinc-800 hover:bg-zinc-900 text-zinc-300">
+                <Button variant="outline" className="rounded-full border border-zinc-700 px-6 py-2 text-sm font-bold bg-zinc-900">
                   <Edit2 className="h-4 w-4 mr-2" />
-                  Edit Profile
+                  Edit
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[500px]">

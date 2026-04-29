@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft } from "lucide-react";
+import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import type { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/follow";
+import { updateUserProfileImage } from "@/app/actions";
+import { useUploadThing } from "@/lib/uploadthing";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,6 +58,35 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
     });
   };
 
+  const { startUpload, isUploading } = useUploadThing("imageUploader", {
+    onClientUploadComplete: async (res) => {
+      const url = res?.[0].url;
+      if (url) {
+        await updateUserProfileImage(url);
+        toast.success("Profile picture updated!");
+        router.refresh();
+      }
+    },
+    onUploadError: (error) => {
+      toast.error(`Upload failed: ${error.message}`);
+    },
+  });
+
+  const handleImageClick = () => {
+    if (isOwnProfile && !isUploading) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          startUpload([file]);
+        }
+      };
+      input.click();
+    }
+  };
+
   return (
     <div className="relative border-b border-zinc-800">
       {/* Sticky Header */}
@@ -81,7 +113,10 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
       {/* Profile Info Section */}
       <div className="px-4 pb-4">
         <div className="relative -mt-16 mb-4 flex items-end justify-between lg:-mt-20">
-          <div className="relative h-32 w-32 rounded-full border-4 border-black bg-zinc-900 lg:h-40 lg:w-40 overflow-hidden shadow-2xl">
+          <div 
+            onClick={handleImageClick}
+            className={`relative h-32 w-32 rounded-full border-4 border-black bg-zinc-900 lg:h-40 lg:w-40 overflow-hidden shadow-2xl ${isOwnProfile ? "cursor-pointer group" : ""}`}
+          >
             {user.image ? (
               <img src={user.image} alt={displayName} className="h-full w-full object-cover" />
             ) : (
@@ -89,9 +124,20 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
                 {initials}
               </div>
             )}
+            
             {isOwnProfile && (
-              <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                <Camera className="text-white h-6 w-6" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {isUploading ? (
+                  <Loader2 className="text-white h-8 w-8 animate-spin" />
+                ) : (
+                  <Camera className="text-white h-6 w-6" />
+                )}
+              </div>
+            )}
+
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                <Loader2 className="text-emerald-500 h-10 w-10 animate-spin" />
               </div>
             )}
           </div>

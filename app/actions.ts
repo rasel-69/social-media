@@ -290,3 +290,21 @@ export async function createShare(postId: string) {
   revalidatePath("/");
   return { success: true, share };
 }
+
+export async function updateUserProfileImage(imageUrl: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { image: imageUrl },
+  });
+
+  revalidatePath("/");
+  // Since we don't know the exact username from the session object (it might be in session.user but better to be safe)
+  // Revalidating the base profile and root is usually enough, but let's try to be specific.
+  return { success: true };
+}
