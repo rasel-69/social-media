@@ -22,6 +22,17 @@ export default async function Home() {
         },
       },
       reactions: true,
+      sharedPost: {
+        include: {
+          author: {
+            select: {
+              name: true,
+              username: true,
+              image: true,
+            },
+          },
+        },
+      },
     },
   });
 

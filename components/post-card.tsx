@@ -1,28 +1,46 @@
 "use client";
 
-import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle, Share2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit3, Loader2, Heart, MessageCircle, Share2, Smile } from "lucide-react";
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { deletePost, updatePost, toggleReaction, createShare } from "@/app/actions";
 import { CommentSection } from "./comment/CommentSection";
 import { Post } from "./feed";
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
   isOwner?: boolean;
   currentUserId?: string;
+  onDelete?: (postId: string) => void;
 }
 
-export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
+export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState(post.content);
+  const [editedContent, setEditedContent] = useState(post.content || "");
   const [isPending, startTransition] = useTransition();
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState((post as any)._count?.comments || (post as any).comments?.length || 0);
   const [shareCount, setShareCount] = useState((post as any)._count?.shares || (post as any).shares?.length || 0);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareCaption, setShareCaption] = useState("");
+  const [showShareEmojiPicker, setShowShareEmojiPicker] = useState(false);
   const reactionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const shareTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const displayName = post.author.name || post.author.username || "Unknown User";
   const initials = post.author.name?.[0] || post.author.username?.[0] || "?";
@@ -34,6 +52,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
       try {
         await deletePost(post.id);
         setShowMenu(false);
+        if (onDelete) onDelete(post.id);
       } catch (error) {
         console.error("Delete failed:", error);
         alert("Failed to delete post. Please try again.");
@@ -99,12 +118,35 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
     }, 500);
   };
 
+  const onShareEmojiClick = (emojiData: any) => {
+    const textarea = shareTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+
+    const newContent = before + emojiData.emoji + after;
+    setShareCaption(newContent);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + emojiData.emoji.length, start + emojiData.emoji.length);
+    }, 0);
+  };
+
   return (
     <div className="border-b border-zinc-800 p-4 lg:p-5 transition hover:bg-zinc-950/50">
       <div className="flex gap-3">
         {/* Avatar */}
-        <Link href={`/Profile/${post.author.username || post.authorId}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase hover:opacity-80 transition">
-          {initials}
+        <Link href={`/Profile/${post.author.username || post.authorId}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase hover:opacity-80 transition overflow-hidden">
+          {post.author.image ? (
+            <img src={post.author.image} alt={displayName} className="h-full w-full object-cover" />
+          ) : (
+            initials
+          )}
         </Link>
 
         <div className="flex-1">
@@ -142,7 +184,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
                       <button
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-white hover:bg-zinc-900 transition"
                         onClick={() => {
-                          setEditedContent(post.content);
+                          setEditedContent(post.content || "");
                           setIsEditing(true);
                           setShowMenu(false);
                         }}
@@ -181,7 +223,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
                 <button
                   onClick={() => {
                     setIsEditing(false);
-                    setEditedContent(post.content);
+                    setEditedContent(post.content || "");
                   }}
                   className="px-5 py-2 text-sm font-semibold text-zinc-400 hover:text-black transition-colors rounded-full hover:bg-zinc-200"
                 >
@@ -216,6 +258,33 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
                 alt="Post attachment"
                 className="max-h-[512px] w-full object-cover"
               />
+            </div>
+          )}
+
+          {/* Shared Post Content */}
+          {post.sharedPost && (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/20 hover:bg-zinc-900/40 transition p-4">
+              <Link href={`/Profile/${post.sharedPost.author.username || post.sharedPost.authorId}`} className="flex items-center gap-2 mb-2 group/author">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-emerald-400 uppercase overflow-hidden ring-1 ring-zinc-800 group-hover/author:ring-emerald-500/50 transition">
+                  {post.sharedPost.author.image ? (
+                    <img src={post.sharedPost.author.image} alt={post.sharedPost.author.name || ""} className="h-full w-full object-cover" />
+                  ) : (
+                    post.sharedPost.author.name?.[0] || post.sharedPost.author.username?.[0] || "?"
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-white group-hover/author:underline group-hover/author:text-emerald-400 transition-colors">{post.sharedPost.author.name || post.sharedPost.author.username}</span>
+                  <span className="text-xs text-zinc-500">@{post.sharedPost.author.username}</span>
+                  <span className="text-xs text-zinc-500">·</span>
+                  <span className="text-xs text-zinc-500">{new Date(post.sharedPost.createdAt).toLocaleDateString()}</span>
+                </div>
+              </Link>
+              <p className="text-sm text-zinc-200 line-clamp-3 mb-2">{post.sharedPost.content}</p>
+              {post.sharedPost.image && (
+                <div className="overflow-hidden rounded-xl border border-zinc-800/50">
+                  <img src={post.sharedPost.image} alt="Original post" className="max-h-60 w-full object-cover" />
+                </div>
+              )}
             </div>
           )}
 
@@ -299,14 +368,7 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
             </button>
 
             <button
-              onClick={async () => {
-                try {
-                  const res = await createShare(post.id);
-                  if (res.success) setShareCount((prev: number) => prev + 1);
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
+              onClick={() => setIsShareModalOpen(true)}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
             >
               <Share2 className="h-5 w-5" />
@@ -324,6 +386,114 @@ export function PostCard({ post, isOwner, currentUserId }: PostCardProps) {
           )}
         </div>
       </div>
+
+      {/* Share Modal */}
+      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+        <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[500px] rounded-2xl shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-emerald-500" />
+              Share Post
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Author Info */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 overflow-hidden">
+                {post.author.image ? (
+                  <img src={post.author.image} alt={displayName} className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-sm">{displayName}</p>
+                <p className="text-xs text-zinc-500">Sharing to your feed</p>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Textarea
+                ref={shareTextareaRef}
+                value={shareCaption}
+                onChange={(e) => setShareCaption(e.target.value)}
+                placeholder="Say something about this..."
+                className="min-h-[100px] bg-zinc-900/50 border-zinc-800 focus:ring-emerald-500/20 focus:border-emerald-500/50 resize-none rounded-xl pr-10"
+              />
+              <div className="absolute right-2 top-2">
+                <button
+                  onClick={() => setShowShareEmojiPicker(!showShareEmojiPicker)}
+                  className={`rounded-full p-1.5 transition ${showShareEmojiPicker ? 'bg-emerald-500/20 text-emerald-400' : 'text-zinc-500 hover:text-emerald-400 hover:bg-zinc-800'}`}
+                >
+                  <Smile className="h-5 w-5" />
+                </button>
+
+                {showShareEmojiPicker && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowShareEmojiPicker(false)} />
+                    <div className="absolute top-full right-0 mt-2 z-50 shadow-2xl">
+                      <EmojiPicker
+                        onEmojiClick={onShareEmojiClick}
+                        theme={"dark" as any}
+                        autoFocusSearch={false}
+                        width={300}
+                        height={350}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Preview of what's being shared */}
+            <div className="rounded-xl border border-zinc-800 p-3 bg-zinc-900/10 opacity-70">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold">@{post.author.username}</span>
+              </div>
+              <p className="text-xs text-zinc-400 line-clamp-2">{post.content}</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsShareModalOpen(false);
+                setShowShareEmojiPicker(false);
+              }}
+              className="text-zinc-400 hover:text-white hover:bg-zinc-900 rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isPending}
+              onClick={async () => {
+                startTransition(async () => {
+                  try {
+                    const res = await createShare(post.id, shareCaption);
+                    if (res.success) {
+                      setShareCount((prev: number) => prev + 1);
+                      setIsShareModalOpen(false);
+                      setShareCaption("");
+                      setShowShareEmojiPicker(false);
+                      toast.success("Shared to your feed!");
+                      // On home feed, the new post will appear after revalidation
+                    }
+                  } catch (e) {
+                    console.error(e);
+                    toast.error("Failed to share post");
+                  }
+                });
+              }}
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-full px-8 shadow-lg shadow-emerald-500/20"
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Share Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

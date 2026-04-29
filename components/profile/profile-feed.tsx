@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition, useRef } from "react";
 import { PostCard } from "../post-card";
 import { getUserPosts, createPost } from "@/app/actions";
 import { Post } from "../feed";
+import { authClient } from "@/lib/auth-client";
 import { ImageIcon, Code2, Smile, X, Loader2 } from "lucide-react";
 import { useUploadThing } from "@/lib/uploadthing";
 import dynamic from 'next/dynamic';
@@ -18,6 +19,7 @@ interface ProfileFeedProps {
 }
 
 export function ProfileFeed({ userId, type, currentUserId, isOwnProfile }: ProfileFeedProps) {
+  const { data: session } = authClient.useSession();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -99,8 +101,15 @@ export function ProfileFeed({ userId, type, currentUserId, isOwnProfile }: Profi
     <div className="divide-y divide-zinc-800">
       {/* Create Post - Only on 'All' tab for own profile */}
       {isOwnProfile && type === "all" && (
-        <div className="px-4 py-4 lg:px-5 bg-zinc-950/30">
+        <div className="px-4 py-4 lg:px-5 bg-zinc-950/30 border-b border-zinc-800">
           <div className="flex gap-3">
+             <div className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 hidden sm:flex overflow-hidden">
+                {session?.user.image ? (
+                  <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
+                ) : (
+                  session?.user.name?.[0] || "?"
+                )}
+             </div>
              <div className="flex-1">
                 <textarea
                   ref={textareaRef}
@@ -164,6 +173,9 @@ export function ProfileFeed({ userId, type, currentUserId, isOwnProfile }: Profi
             post={post}
             isOwner={post.authorId === currentUserId}
             currentUserId={currentUserId}
+            onDelete={(deletedId) => {
+              setPosts(prev => prev.filter(p => p.id !== deletedId));
+            }}
           />
         ))
       ) : (

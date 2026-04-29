@@ -50,7 +50,8 @@ export async function deletePost(postId: string) {
     select: { authorId: true },
   });
 
-  if (!post) throw new Error("Post not found");
+  // If post is already gone, consider it a success
+  if (!post) return { success: true };
 
   if (post.authorId !== session.user.id) {
     throw new Error("You can only delete your own posts");
@@ -155,6 +156,17 @@ export async function getUserPosts(userId: string) {
           },
         },
         reactions: true,
+        sharedPost: {
+          include: {
+            author: {
+              select: {
+                name: true,
+                username: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -273,22 +285,53 @@ export async function getComments(postId: string) {
 
 // ----- SHARE ACTIONS -----
 
-export async function createShare(postId: string) {
+export async function createShare(postId: string, content?: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
   if (!session) throw new Error("Unauthorized");
 
-  const share = await prisma.share.create({
+  // Create a record in the Share table for analytics/counts
+  await prisma.share.create({
     data: {
       postId,
       sharerId: session.user.id,
     }
   });
 
+  // Create a new post that appears in the feed and references the original post
+  const sharePost = await prisma.post.create({
+    data: {
+      content: content || null,
+      authorId: session.user.id,
+      sharedPostId: postId,
+    },
+    include: {
+      author: {
+        select: {
+          name: true,
+          username: true,
+          image: true,
+        },
+      },
+      sharedPost: {
+        include: {
+          author: {
+            select: {
+              name: true,
+              username: true,
+              image: true,
+            },
+          },
+        },
+      },
+      reactions: true,
+    }
+  });
+
   revalidatePath("/");
-  return { success: true, share };
+  return { success: true, sharePost };
 }
 
 export async function updateUserProfileImage(imageUrl: string) {

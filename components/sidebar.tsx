@@ -106,8 +106,12 @@ export function Sidebar() {
           session ? (
             <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900 group relative">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase">
-                  {session.user.name?.[0] || "?"}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase overflow-hidden">
+                  {session.user.image ? (
+                    <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
+                  ) : (
+                    session.user.name?.[0] || "?"
+                  )}
                 </div>
                 <div className="overflow-hidden">
                   <h3 className="text-sm font-bold truncate">{session.user.name}</h3>

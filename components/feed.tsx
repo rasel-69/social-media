@@ -2,7 +2,7 @@
 
 import { Code2, Menu, Image as ImageIcon, X, Smile } from "lucide-react";
 import { PostCard } from "./post-card";
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 import dynamic from 'next/dynamic';
@@ -27,6 +27,13 @@ export type Post = PrismaPost & {
         image: string | null;
     };
     reactions: Reaction[];
+    sharedPost?: (PrismaPost & {
+        author: {
+            name: string | null;
+            username: string | null;
+            image: string | null;
+        };
+    }) | null;
 };
 
 interface FeedProps {
@@ -38,6 +45,7 @@ interface FeedProps {
 import { authClient } from "@/lib/auth-client";
 
 export function Feed({ initialPosts, currentUserId }: FeedProps) {
+    const [posts, setPosts] = useState<Post[]>(initialPosts);
     const { data: session } = authClient.useSession();
     const initials = session?.user.name?.[0] || "?";
     const [content, setContent] = useState("");
@@ -48,6 +56,10 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        setPosts(initialPosts);
+    }, [initialPosts]);
 
     const { startUpload } = useUploadThing("imageUploader", {
         onClientUploadComplete: (res) => {
@@ -88,10 +100,16 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
         if ((!content.trim() && !image) || isPending || isUploading) return;
 
         startTransition(async () => {
-            await createPost(content, image || undefined);
-            setContent("");
-            setImage(null);
-            setShowEmojiPicker(false);
+            const res = await createPost(content, image || undefined);
+            if (res?.success) {
+                // We could re-fetch or optimistically update
+                // For simplicity, revalidating path usually works, but for instant UI we can update local state
+                // But createPost returns {success: true}, not the post.
+                // Revalidating is fine for creation, but for deletion we want instant.
+                setContent("");
+                setImage(null);
+                setShowEmojiPicker(false);
+            }
         });
     };
 
@@ -125,8 +143,12 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
             {/* Mobile Header */}
             <header className="sticky top-0 z-20 flex items-center justify-between border-b border-zinc-800 bg-black/80 px-4 py-3 backdrop-blur-md lg:px-5">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 lg:hidden">
-                        {initials}
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 lg:hidden overflow-hidden">
+                        {session?.user.image ? (
+                            <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
+                        ) : (
+                            initials
+                        )}
                     </div>
                 </div>
                 
@@ -141,8 +163,12 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
             {/* Create Post */}
             <div className="border-b border-zinc-800 px-4 py-4 lg:px-5">
                 <div className="flex gap-3">
-                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 sm:flex">
-                        {initials}
+                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 sm:flex overflow-hidden">
+                        {session?.user.image ? (
+                            <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
+                        ) : (
+                            initials
+                        )}
                     </div>
 
                     <div className="flex-1">
@@ -245,13 +271,16 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
 
             {/* Posts List */}
             <div className="divide-y divide-zinc-800">
-                {initialPosts.length > 0 ? (
-                    initialPosts.map((post) => (
+                {posts.length > 0 ? (
+                    posts.map((post) => (
                         <PostCard
                             key={post.id}
                             post={post}
                             isOwner={post.authorId === currentUserId}
                             currentUserId={currentUserId}
+                            onDelete={(deletedId) => {
+                                setPosts(prev => prev.filter(p => p.id !== deletedId));
+                            }}
                         />
                     ))
                 ) : (

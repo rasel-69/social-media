@@ -39,7 +39,13 @@ export function MobileNav() {
             href={`/Profile/${(session.user as any).username || session.user.id}`}
             className={`flex flex-col items-center gap-1 py-2 ${pathname.startsWith("/Profile") ? "text-emerald-400" : "text-zinc-400"}`}
           >
-            <User className={`h-5 w-5 ${pathname.startsWith("/Profile") ? "fill-emerald-400/10" : ""}`} />
+            <div className={`flex h-5 w-5 items-center justify-center rounded-full overflow-hidden ${pathname.startsWith("/Profile") ? "ring-1 ring-emerald-400" : "bg-zinc-800"}`}>
+              {session.user.image ? (
+                <img src={session.user.image} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                <User className={`h-full w-full p-0.5 ${pathname.startsWith("/Profile") ? "fill-emerald-400/10" : ""}`} />
+              )}
+            </div>
             <span className="text-[10px]">Profile</span>
           </Link>
         ) : (

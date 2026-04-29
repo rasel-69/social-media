@@ -98,8 +98,8 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   author    User     @relation(fields: [authorId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
-  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
 }
 
@@ -110,19 +110,25 @@ model Share {
   postId    String
   createdAt DateTime @default(now())
   sharer    User @relation(fields: [sharerId], references: [id])
-  post      Post @relation(fields: [postId], references: [id])
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  content   String
-  image     String?
-  createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
-  reactions Reaction[]
-  comments  Comment[]
-  shares    Share[]
+  id            String   @id @default(cuid())
+  content       String?
+  image         String?
+  createdAt     DateTime @default(now())
+  author        User     @relation(fields: [authorId], references: [id])
+  authorId      String
+  
+  // Shared post relations
+  sharedPostId  String?
+  sharedPost    Post?    @relation("SharedPosts", fields: [sharedPostId], references: [id], onDelete: Cascade)
+  sharedBy      Post[]   @relation("SharedPosts")
+
+  reactions     Reaction[]
+  comments      Comment[]
+  shares        Share[]
 }
 
 model Reaction {
