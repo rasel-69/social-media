@@ -136,6 +136,23 @@ export async function toggleReaction(postId: string, type: string = "LIKE") {
           type,
         },
       });
+
+      // Notify post author
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true }
+      });
+
+      if (post && post.authorId !== session.user.id) {
+        await (prisma as any).notification.create({
+          data: {
+            userId: post.authorId,
+            actorId: session.user.id,
+            type: "LIKE",
+            postId: postId,
+          }
+        });
+      }
     }
 
     revalidatePath("/");
@@ -207,6 +224,43 @@ export async function createComment(content: string, postId: string, parentId?: 
         }
       }
     });
+
+    // Notify post author
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true }
+    });
+
+    if (post && post.authorId !== session.user.id) {
+      await (prisma as any).notification.create({
+        data: {
+          userId: post.authorId,
+          actorId: session.user.id,
+          type: "COMMENT",
+          postId: postId,
+          commentId: comment.id,
+        }
+      });
+    }
+
+    // If it's a reply, notify the parent comment author too
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { authorId: true }
+      });
+      if (parentComment && parentComment.authorId !== session.user.id && parentComment.authorId !== post?.authorId) {
+        await (prisma as any).notification.create({
+          data: {
+            userId: parentComment.authorId,
+            actorId: session.user.id,
+            type: "REPLY",
+            postId: postId,
+            commentId: comment.id,
+          }
+        });
+      }
+    }
 
     revalidatePath("/");
     return { success: true, comment };
@@ -333,6 +387,23 @@ export async function createShare(postId: string, content?: string) {
       }
     });
 
+    // Notify original post author
+    const originalPost = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true }
+    });
+
+    if (originalPost && originalPost.authorId !== session.user.id) {
+      await (prisma as any).notification.create({
+        data: {
+          userId: originalPost.authorId,
+          actorId: session.user.id,
+          type: "SHARE",
+          postId: sharePost.id,
+        }
+      });
+    }
+
     revalidatePath("/");
     return { success: true, sharePost };
   } catch (error: any) {
@@ -374,5 +445,60 @@ export async function updateUserCoverImage(imageUrl: string) {
   } catch (error) {
     console.error("Error in updateUserCoverImage:", error);
     return { success: false, error: "Failed to update cover image" };
+  }
+}
+
+// ----- NOTIFICATION ACTIONS -----
+
+export async function getNotifications() {
+  try {
+    const session = await getSession();
+    if (!session) return [];
+
+    const notifications = await (prisma as any).notification.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        actor: {
+          select: {
+            name: true,
+            username: true,
+            image: true,
+          },
+        },
+        post: {
+          select: {
+            content: true,
+            image: true,
+          }
+        },
+      },
+    });
+
+    return notifications;
+  } catch (error) {
+    console.error("Error in getNotifications:", error);
+    return [];
+  }
+}
+
+export async function markNotificationsAsRead() {
+  try {
+    const session = await getSession();
+    if (!session) return { success: false };
+
+    await (prisma as any).notification.updateMany({
+      where: { 
+        userId: session.user.id,
+        isRead: false 
+      },
+      data: { isRead: true },
+    });
+
+    revalidatePath("/Notifications");
+    return { success: true };
+  } catch (error) {
+    console.error("Error in markNotificationsAsRead:", error);
+    return { success: false };
   }
 }

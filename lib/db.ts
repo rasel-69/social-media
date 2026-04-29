@@ -1,23 +1,22 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL
 });
+
 const prismaClientSingleton = () => {
   return new PrismaClient({ adapter })
 }
-declare const globalThis: {
-  prismaGlobalV3: ReturnType<typeof prismaClientSingleton>;
-} & typeof global;
 
-// Force reload after schema update
-const prisma = globalThis.prismaGlobalV3 ?? prismaClientSingleton();
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.prismaGlobalV3 = prisma;
-}
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined;
+};
+
+const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+
 export default prisma;
 
-
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;

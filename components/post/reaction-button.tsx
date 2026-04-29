@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { toggleReaction } from "@/app/actions";
+import { useRouter, usePathname } from "next/navigation";
 
 interface ReactionButtonProps {
   postId: string;
@@ -14,6 +15,8 @@ export function ReactionButton({ postId, reactions, currentUserId }: ReactionBut
   const [showMenu, setShowMenu] = useState(false);
   const [isPending, startTransition] = useTransition();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const hasReacted = reactions.some(r => r.userId === currentUserId);
   const userReaction = reactions.find(r => r.userId === currentUserId);
@@ -29,7 +32,10 @@ export function ReactionButton({ postId, reactions, currentUserId }: ReactionBut
   const currentReaction = reactionTypes.find(r => r.type === userReaction?.type) || reactionTypes[0];
 
   const handleToggle = async (type: string = "LIKE") => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      router.push(`/login?callbackURL=${pathname}`);
+      return;
+    }
     startTransition(async () => {
       try {
         await toggleReaction(postId, type);

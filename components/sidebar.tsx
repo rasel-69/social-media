@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import {
   BellIcon,
   CompassIcon,
@@ -21,6 +23,11 @@ export function Sidebar() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user as User | undefined;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -102,7 +109,7 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto">
-        {!isPending && (
+        {(mounted && !isPending) && (
           session ? (
             <div className="flex items-center justify-between rounded-full p-3 transition hover:bg-zinc-900 group relative">
               <div className="flex items-center gap-3 overflow-hidden">

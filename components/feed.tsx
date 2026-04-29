@@ -1,10 +1,11 @@
 "use client";
 
-import { Code2, Menu, Image as ImageIcon, X, Smile } from "lucide-react";
+import { ImageIcon, X, Smile, Loader2, Code2, User as UserIcon } from "lucide-react";
 import { PostCard } from "./post-card";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
+import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
@@ -56,6 +57,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const router = useRouter();
 
     useEffect(() => {
         setPosts(initialPosts);
@@ -82,7 +84,16 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
         },
     });
 
+    const handleActionCheck = () => {
+        if (!session) {
+            router.push("/login?callbackURL=" + window.location.pathname);
+            return false;
+        }
+        return true;
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!handleActionCheck()) return;
         const file = e.target.files?.[0];
         if (file) {
             await startUpload([file]);
@@ -97,6 +108,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
     };
 
     const handlePost = async () => {
+        if (!handleActionCheck()) return;
         if ((!content.trim() && !image) || isPending || isUploading) return;
 
         startTransition(async () => {
@@ -166,8 +178,10 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                     <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 sm:flex overflow-hidden">
                         {session?.user.image ? (
                             <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
-                        ) : (
+                        ) : session?.user ? (
                             initials
+                        ) : (
+                            <UserIcon className="h-5 w-5" />
                         )}
                     </div>
 
@@ -230,7 +244,10 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                                 </button>
                                 <div className="relative">
                                     <button
-                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        onClick={() => {
+                                            if (!handleActionCheck()) return;
+                                            setShowEmojiPicker(!showEmojiPicker);
+                                        }}
                                         className={`rounded-full p-2 transition ${showEmojiPicker ? 'bg-emerald-500/20 text-emerald-400' : 'text-emerald-400 hover:bg-emerald-500/10'}`}
                                         title="Add Emoji"
                                     >

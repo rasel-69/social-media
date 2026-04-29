@@ -1,17 +1,30 @@
 import { MainLayout } from "@/components/main-layout";
+import { getNotifications } from "@/app/actions";
+import { NotificationList } from "@/components/notification-list";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/login?callbackURL=/Notifications");
+  }
+
+  const notifications = await getNotifications();
+
   return (
     <MainLayout>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col min-h-screen border-r border-zinc-800">
         <div className="sticky top-0 z-20 bg-black/80 px-4 py-4 backdrop-blur-md border-b border-zinc-800">
           <h2 className="text-xl font-bold">Notifications</h2>
         </div>
-        <div className="flex h-full items-center justify-center p-8 text-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2">No notifications yet</h1>
-            <p className="text-zinc-500">When people interact with you, you'll see it here.</p>
-          </div>
+        
+        <div className="flex-1 overflow-y-auto">
+          <NotificationList initialNotifications={notifications} />
         </div>
       </div>
     </MainLayout>

@@ -3,6 +3,7 @@
 import { Loader2, MessageCircle, Share2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { deletePost, updatePost } from "@/app/actions";
 import { CommentSection } from "./comment/CommentSection";
 import { Post } from "./feed";
@@ -27,6 +28,7 @@ export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardPro
   const [commentCount, setCommentCount] = useState((post as any)._count?.comments || (post as any).comments?.length || 0);
   const [shareCount, setShareCount] = useState((post as any)._count?.shares || (post as any).shares?.length || 0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const router = useRouter();
 
   const { data: session } = authClient.useSession();
   const displayName = post.author.name || post.author.username || "Unknown User";
@@ -146,7 +148,13 @@ export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardPro
             <ReactionButton postId={post.id} reactions={post.reactions} currentUserId={currentUserId} />
 
             <button
-              onClick={() => setShowComments(!showComments)}
+              onClick={() => {
+                if (!session) {
+                  router.push("/login?callbackURL=" + window.location.pathname);
+                } else {
+                  setShowComments(!showComments);
+                }
+              }}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
             >
               <MessageCircle className="h-5 w-5" />
@@ -154,7 +162,13 @@ export function PostCard({ post, isOwner, currentUserId, onDelete }: PostCardPro
             </button>
 
             <button
-              onClick={() => setIsShareModalOpen(true)}
+              onClick={() => {
+                if (!session) {
+                  router.push("/login?callbackURL=" + window.location.pathname);
+                } else {
+                  setIsShareModalOpen(true);
+                }
+              }}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 transition hover:bg-zinc-900 hover:text-white"
             >
               <Share2 className="h-5 w-5" />

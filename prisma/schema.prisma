@@ -34,6 +34,8 @@ model User {
   following     Follow[]   @relation("follower")
   comments      Comment[]
   shares        Share[]
+  notifications Notification[] @relation("user_notifications")
+  actions       Notification[] @relation("actor_notifications")
 }
 
 model Follow {
@@ -129,6 +131,7 @@ model Post {
   reactions     Reaction[]
   comments      Comment[]
   shares        Share[]
+  notifications Notification[]
 }
 
 model Reaction {
@@ -143,3 +146,25 @@ model Reaction {
   @@unique([postId, userId])
 }
 
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   // The user receiving the notification
+  actorId   String   // The user who performed the action
+  type      String   // LIKE, COMMENT, SHARE, FOLLOW
+  postId    String?  // Optional: associated post
+  commentId String?  // Optional: associated comment
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation("user_notifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor     User     @relation("actor_notifications", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([actorId])
+}
+
+// Add relations to User model
+// Note: I will need to update the User model in a separate replacement chunk if needed, 
+// but usually adding the relation fields in Notification is enough for Prisma.
+// However, it's better to explicitly add them to User for completeness.
