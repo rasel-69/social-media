@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { User } from "@/lib/auth-types";
 import { toast } from "sonner";
+import { getUnreadCount } from "@/app/actions/message";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -24,10 +25,19 @@ export function Sidebar() {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user as User | undefined;
   const [mounted, setMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (session) {
+      getUnreadCount().then(count => setUnreadCount(count));
+      // Poll unread count every 15s
+      const interval = setInterval(() => {
+        getUnreadCount().then(count => setUnreadCount(count));
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
 
   const handleLogout = async () => {
     await authClient.signOut();
@@ -84,10 +94,17 @@ export function Sidebar() {
 
           <Link
             href="/Messages"
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Messages" ? "text-emerald-400" : "text-white"}`}
+            className={`flex w-full items-center justify-between rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Messages" || pathname.startsWith("/Messages/") ? "text-emerald-400" : "text-white"}`}
           >
-            <MailIcon className="h-6 w-6" />
-            Messages
+            <div className="flex items-center gap-3">
+              <MailIcon className="h-6 w-6" />
+              <span>Messages</span>
+            </div>
+            {unreadCount > 0 && (
+              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-black">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </Link>
 
           <Link

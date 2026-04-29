@@ -1,18 +1,28 @@
 import { MainLayout } from "@/components/main-layout";
+import { getConversations } from "@/app/actions/message";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { MessagesLayout } from "./messages-layout";
+import { redirect } from "next/navigation";
 
-export default function MessagesPage() {
+export default async function MessagesPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  const conversations = await getConversations();
+
   return (
     <MainLayout>
-      <div className="flex flex-col h-full">
-        <div className="sticky top-0 z-20 bg-black/80 px-4 py-4 backdrop-blur-md border-b border-zinc-800">
-          <h2 className="text-xl font-bold">Messages</h2>
-        </div>
-        <div className="flex h-full items-center justify-center p-8 text-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-2">Your messages</h1>
-            <p className="text-zinc-500">Send and receive messages with other users.</p>
-          </div>
-        </div>
+      <div className="h-full flex flex-col w-full bg-black -mt-[1px]">
+        <MessagesLayout 
+          initialConversations={conversations} 
+          currentUserId={session.user.id} 
+        />
       </div>
     </MainLayout>
   );
