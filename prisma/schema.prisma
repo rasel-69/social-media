@@ -139,6 +139,7 @@ model Post {
   comments      Comment[]
   shares        Share[]
   notifications Notification[]
+  messages      Message[]
 }
 
 model Reaction {
@@ -230,6 +231,10 @@ model Message {
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  postId         String?      // Reference to a shared post
+  post           Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([conversationId])
   @@index([senderId])
+  @@index([postId])
 }

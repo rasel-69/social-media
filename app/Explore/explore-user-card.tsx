@@ -57,10 +57,10 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
 
       <Link
         href={`/Profile/${user.username || user.id}`}
-        className="block relative h-24 bg-gradient-to-r from-emerald-900/40 via-zinc-800 to-emerald-900/40"
+        className="block relative h-32 bg-gradient-to-br from-emerald-900/60 via-zinc-800 to-emerald-900/60 transition-all group-hover:scale-105 duration-500"
       >
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
-          <div className="h-16 w-16 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-xl shadow-lg">
+        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
+          <div className="h-20 w-20 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-2xl shadow-xl transition-transform group-hover:scale-110 duration-500">
             {user.image ? (
               <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
             ) : (
@@ -70,14 +70,14 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
         </div>
       </Link>
 
-      <div className="flex-1 px-4 pt-10 pb-4 flex flex-col items-center text-center">
+      <div className="flex-1 px-6 pt-14 pb-6 flex flex-col items-center text-center">
         <Link
           href={`/Profile/${user.username || user.id}`}
-          className="font-bold text-white hover:underline line-clamp-1"
+          className="font-extrabold text-lg text-white hover:text-emerald-400 transition-colors line-clamp-1"
         >
           {user.name}
         </Link>
-        <p className="text-xs text-zinc-500 mb-4 line-clamp-1">@{user.username || "user"}</p>
+        <p className="text-sm text-zinc-500 mb-6 line-clamp-1">@{user.username || "user"}</p>
 
         <div className="mt-auto w-full">
           <button

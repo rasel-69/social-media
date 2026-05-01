@@ -194,13 +194,52 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                     )}
                     
                     <div
-                      className={`px-4 py-2.5 rounded-2xl whitespace-pre-wrap break-words ${
+                      className={`px-4 py-2.5 rounded-2xl whitespace-pre-wrap break-words flex flex-col gap-2 ${
                         isMe 
                           ? "bg-emerald-500 text-black rounded-br-sm" 
                           : "bg-zinc-800 text-white rounded-bl-sm"
                       }`}
                     >
-                      {msg.content}
+                      {msg.postId && msg.post && (
+                        <div className={`mb-1 p-3 rounded-xl border flex flex-col gap-2 ${
+                          isMe ? "bg-emerald-600/20 border-emerald-400/30" : "bg-black/20 border-zinc-700"
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 rounded-full bg-zinc-800 overflow-hidden shrink-0 border border-white/10">
+                              {msg.post.author.image ? (
+                                <img src={msg.post.author.image} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-emerald-400">
+                                  {msg.post.author.name?.[0]?.toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-xs font-bold truncate">{msg.post.author.name}</span>
+                          </div>
+                          
+                          {msg.post.content && (
+                            <p className="text-xs line-clamp-3 opacity-90 italic">
+                              {msg.post.content}
+                            </p>
+                          )}
+                          
+                          {msg.post.image && (
+                            <div className="rounded-lg overflow-hidden border border-white/5 max-h-32">
+                              <img src={msg.post.image} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+
+                          <Link 
+                            href={`/Post/${msg.postId}`}
+                            className={`text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded-md self-start transition ${
+                              isMe ? "bg-emerald-400 text-black hover:bg-white" : "bg-zinc-700 text-white hover:bg-emerald-500 hover:text-black"
+                            }`}
+                          >
+                            View Post
+                          </Link>
+                        </div>
+                      )}
+                      <span>{msg.content}</span>
                     </div>
                   </div>
                   

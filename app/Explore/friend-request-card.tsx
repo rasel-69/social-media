@@ -55,10 +55,10 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col transition hover:border-zinc-700 hover:shadow-lg hover:shadow-emerald-500/5">
       <Link
         href={`/Profile/${user.username || user.id}`}
-        className="block relative h-24 bg-gradient-to-r from-blue-900/30 via-zinc-800 to-purple-900/30"
+        className="block relative h-32 bg-gradient-to-br from-blue-900/40 via-zinc-800 to-purple-900/40 transition-all hover:brightness-110 duration-500"
       >
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2">
-          <div className="h-16 w-16 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-xl shadow-lg">
+        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
+          <div className="h-20 w-20 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-2xl shadow-xl transition-transform hover:scale-105 duration-500">
             {user.image ? (
               <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
             ) : (
@@ -68,15 +68,15 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
         </div>
       </Link>
 
-      <div className="flex-1 px-4 pt-10 pb-4 flex flex-col items-center text-center">
+      <div className="flex-1 px-6 pt-14 pb-6 flex flex-col items-center text-center">
         <Link
           href={`/Profile/${user.username || user.id}`}
-          className="font-bold text-white hover:underline line-clamp-1"
+          className="font-extrabold text-lg text-white hover:text-emerald-400 transition-colors line-clamp-1"
         >
           {user.name}
         </Link>
-        <p className="text-xs text-zinc-500 line-clamp-1">@{user.username || "user"}</p>
-        <p className="text-[11px] text-zinc-600 mt-1">{timeAgo}</p>
+        <p className="text-sm text-zinc-500 line-clamp-1">@{user.username || "user"}</p>
+        <p className="text-xs text-zinc-600 mt-2">{timeAgo}</p>
 
         {status === "accepted" ? (
           <div className="mt-4 w-full py-2.5 rounded-xl text-sm font-bold bg-emerald-500/10 text-emerald-400 flex items-center justify-center gap-2 border border-emerald-500/20">

@@ -52,7 +52,7 @@ export default async function ExplorePage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {incomingRequests.map((req) => (
                   <FriendRequestCard
                     key={req.user.id}
@@ -78,7 +78,7 @@ export default async function ExplorePage() {
                   People you&apos;ve sent friend requests to
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sentRequests.map((req) => (
                   <SentRequestCard
                     key={req.user.id}
@@ -107,7 +107,7 @@ export default async function ExplorePage() {
                   Based on your activity and network
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {suggestedUsers.map((user) => (
                   <ExploreUserCard
                     key={user.id}

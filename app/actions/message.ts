@@ -145,6 +145,11 @@ export async function getMessages(conversationId: string, limit = 50) {
       where: { conversationId },
       include: {
         sender: { select: { id: true, name: true, image: true, username: true } },
+        post: {
+          include: {
+            author: { select: { id: true, name: true, image: true, username: true } }
+          }
+        }
       },
       orderBy: { createdAt: "asc" },
       take: limit,
@@ -264,5 +269,62 @@ export async function getUnreadCount() {
     return count;
   } catch (error) {
     return 0;
+  }
+}
+
+// 7. Send a post in a message
+export async function sendPostInMessage(postId: string, friendId: string) {
+  try {
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const currentUserId = session.user.id;
+
+    // Get or create conversation
+    const res = await getOrCreateConversation(friendId);
+    if (!res.success || !res.conversation) throw new Error(res.error || "Failed to start chat");
+
+    const conversationId = res.conversation.id;
+
+    // Get post info for last message preview
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { content: true, author: { select: { name: true } } }
+    });
+
+    const lastMsgPreview = `Shared a post by ${post?.author.name || "someone"}`;
+
+    // Create message with postId
+    const [message] = await prisma.$transaction([
+      prisma.message.create({
+        data: {
+          content: "Shared a post",
+          senderId: currentUserId,
+          conversationId,
+          postId: postId,
+        },
+        include: {
+          sender: { select: { id: true, name: true, image: true, username: true } },
+          post: {
+            include: {
+              author: { select: { id: true, name: true, image: true, username: true } }
+            }
+          }
+        }
+      }),
+      prisma.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessage: lastMsgPreview,
+          lastMsgAt: new Date(),
+        },
+      }),
+    ]);
+
+    revalidatePath(`/Messages`);
+    return { success: true, message };
+  } catch (error: any) {
+    console.error("Error sharing post in message:", error);
+    return { success: false, error: error.message || "Failed to share post" };
   }
 }
