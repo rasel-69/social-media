@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ConversationList } from "./conversation-list";
+import { FriendsGrid } from "./friends-grid";
 import { ChatArea } from "./chat-area";
-import { MessageSquare } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { getOrCreateConversation } from "@/app/actions/message";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, MessageCircle } from "lucide-react";
 
 interface MessagesLayoutProps {
   initialConversations: any[];
@@ -16,43 +16,30 @@ interface MessagesLayoutProps {
 export function MessagesLayout({ initialConversations, currentUserId, friends }: MessagesLayoutProps) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeConversation, setActiveConversation] = useState<any | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleSelectConversation = (conv: any) => {
-    if (isMobile) {
-      router.push(`/Messages/${conv.id}`);
-    } else {
-      setActiveConversation(conv);
-      // Mark as read locally
-      setConversations(prev => 
-        prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c)
-      );
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   const handleStartChat = async (friendId: string) => {
-    const res = await getOrCreateConversation(friendId);
-    if (res.success && res.conversation) {
-      // Check if conversation already in list
-      setConversations(prev => {
-        const exists = prev.find(c => c.id === res.conversation.id);
-        if (!exists) {
-          return [res.conversation, ...prev];
-        }
-        return prev;
-      });
-      handleSelectConversation(res.conversation);
+    setIsStartingChat(true);
+    try {
+      const res = await getOrCreateConversation(friendId);
+      if (res.success && res.conversation) {
+        // Check if conversation already in list (for metadata/real-time updates)
+        setConversations(prev => {
+          const exists = prev.find(c => c.id === res.conversation.id);
+          if (!exists) {
+            return [res.conversation, ...prev];
+          }
+          return prev;
+        });
+        
+        setActiveConversation(res.conversation);
+        setIsModalOpen(true);
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error);
+    } finally {
+      setIsStartingChat(false);
     }
   };
 
@@ -76,42 +63,52 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
 
   return (
     <div className="flex h-full w-full bg-black overflow-hidden relative">
-      {/* Sidebar - Always visible on desktop, visible on mobile only if no chat active */}
-      <div className={`h-full shrink-0 ${isMobile ? 'w-full' : 'w-[350px]'}`}>
-        <ConversationList 
-          conversations={conversations} 
-          activeId={activeConversation?.id} 
-          onSelect={handleSelectConversation}
-          isMobile={isMobile}
-          friends={friends}
-          onStartChat={handleStartChat}
-        />
-      </div>
+      {/* Main Grid View */}
+      <FriendsGrid 
+        friends={friends} 
+        onStartChat={handleStartChat} 
+        isStartingChat={isStartingChat}
+      />
 
-      {/* Main Chat Area - Hidden on mobile entirely (uses separate route) */}
-      {!isMobile && (
-        <div className="flex-1 h-full min-w-0 bg-black flex flex-col relative">
-          {activeConversation ? (
-            <ChatArea 
-              key={activeConversation.id} // Force remount on conversation change
-              conversationId={activeConversation.id}
-              currentUserId={currentUserId}
-              otherUser={activeConversation.user}
-              onMessageAdded={handleMessageAdded}
-            />
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-              <div className="h-20 w-20 rounded-full bg-zinc-900 border-2 border-zinc-800 flex items-center justify-center text-emerald-500 mb-6 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                <MessageSquare className="h-10 w-10" />
+      {/* Chat Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="bg-black border-zinc-800 text-white p-0 overflow-hidden sm:max-w-2xl w-[95vw] h-[90vh] sm:h-[85vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)] gap-0 rounded-2xl sm:rounded-3xl">
+          <div className="sr-only">
+            <DialogHeader>
+              <DialogTitle>
+                {activeConversation ? `Chat with ${activeConversation.user.name}` : "Chat"}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          <div className="flex-1 min-h-0">
+            {activeConversation ? (
+              <ChatArea 
+                key={activeConversation.id}
+                conversationId={activeConversation.id}
+                currentUserId={currentUserId}
+                otherUser={activeConversation.user}
+                onMessageAdded={handleMessageAdded}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Your Messages</h2>
-              <p className="text-zinc-500 max-w-sm">
-                Select a conversation from the sidebar or start a new chat with a friend.
-              </p>
-            </div>
-          )}
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loading Overlay when starting chat */}
+      {isStartingChat && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-16 w-16 rounded-full border-b-2 border-emerald-500 animate-spin" />
+            <p className="text-white font-medium animate-pulse">Initializing chat...</p>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
