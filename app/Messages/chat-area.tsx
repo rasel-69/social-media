@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageInput } from "./message-input";
 import { getMessages, markAsRead } from "@/app/actions/message";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, X } from "lucide-react";
 import { format } from "date-fns";
 
 interface ChatAreaProps {
@@ -17,9 +17,10 @@ interface ChatAreaProps {
     image: string | null;
   };
   onMessageAdded: (msg: any) => void;
+  onClose?: () => void;
 }
 
-export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAdded }: ChatAreaProps) {
+export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAdded, onClose }: ChatAreaProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -101,25 +102,40 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-black/95 backdrop-blur z-10">
-        <Link 
-          href={`/Profile/${otherUser.username || otherUser.id}`}
-          className="flex items-center gap-3 hover:bg-zinc-900 p-1.5 -ml-1.5 rounded-xl transition"
-        >
-          <div className="h-10 w-10 rounded-full bg-zinc-800 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
-            {otherUser.image ? (
-              <img src={otherUser.image} alt={otherUser.name} className="h-full w-full object-cover" />
-            ) : (
-              otherUser.name?.[0]?.toUpperCase() || "?"
-            )}
-          </div>
-          <div>
-            <h2 className="font-bold text-white leading-tight">{otherUser.name}</h2>
-            <p className="text-xs text-zinc-400">@{otherUser.username || "user"}</p>
-          </div>
-        </Link>
-        <button className="h-10 w-10 rounded-full hover:bg-zinc-900 flex items-center justify-center text-emerald-400 transition">
-          <Info className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-3">
+          <Link 
+            href={`/Profile/${otherUser.username || otherUser.id}`}
+            className="flex items-center gap-3 hover:bg-zinc-900 p-1.5 -ml-1.5 rounded-xl transition"
+          >
+            <div className="h-10 w-10 rounded-full bg-zinc-800 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
+              {otherUser.image ? (
+                <img src={otherUser.image} alt={otherUser.name} className="h-full w-full object-cover" />
+              ) : (
+                otherUser.name?.[0]?.toUpperCase() || "?"
+              )}
+            </div>
+            <div>
+              <h2 className="font-bold text-white leading-tight">{otherUser.name}</h2>
+              <p className="text-xs text-zinc-400">@{otherUser.username || "user"}</p>
+            </div>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button className="h-10 w-10 rounded-xl hover:bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-emerald-400 transition-all duration-200">
+            <Info className="h-5 w-5" />
+          </button>
+          
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="h-10 w-10 rounded-xl hover:bg-zinc-900 flex items-center justify-center text-zinc-400 hover:text-red-400 transition-all duration-200"
+              title="Close Chat"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}

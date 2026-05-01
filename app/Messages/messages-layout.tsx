@@ -89,6 +89,7 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
                 currentUserId={currentUserId}
                 otherUser={activeConversation.user}
                 onMessageAdded={handleMessageAdded}
+                onClose={() => setIsModalOpen(false)}
               />
             ) : (
               <div className="h-full flex items-center justify-center">
