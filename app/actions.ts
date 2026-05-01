@@ -16,19 +16,20 @@ async function getSession() {
   return session;
 }
 
-export async function createPost(content: string, image?: string) {
+export async function createPost(content: string, image?: string, location?: string) {
   try {
     const session = await getSession();
     if (!session) throw new Error("Unauthorized");
 
     // Input Validation
-    if (!content.trim() && !image) throw new Error("Post content cannot be empty");
+    if (!content.trim() && !image && !location) throw new Error("Post content cannot be empty");
     if (content.length > 2000) throw new Error("Post content is too long");
 
     await prisma.post.create({
       data: {
         content: content.trim(),
         image: image || null,
+        location: location || null,
         authorId: session.user.id,
       },
     });

@@ -1,17 +1,18 @@
 "use client";
 
-import { ImageIcon, X, Smile, Loader2, Code2, User as UserIcon } from "lucide-react";
+import { ImageIcon, X, Smile, Loader2, Code2, User as UserIcon, MapPin } from "lucide-react";
 import { PostCard } from "./post-card";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { createPost } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
+import { toast } from "sonner";
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
 
-import type { Post as PrismaPost, User as PrismaUser } from "@prisma/client";
+import type { Post as PrismaPost } from "@prisma/client";
 
 export type Reaction = {
     id: string;
@@ -51,6 +52,8 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
     const initials = session?.user.name?.[0] || "?";
     const [content, setContent] = useState("");
     const [image, setImage] = useState<string | null>(null);
+    const [location, setLocation] = useState<string | null>(null);
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isPending, startTransition] = useTransition();
@@ -73,7 +76,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
             console.error("Upload error:", error);
             setIsUploading(false);
             setUploadProgress(0);
-            alert("Failed to upload image. Please try again.");
+            toast.error("Failed to upload image. Please try again.");
         },
         onUploadBegin: () => {
             setIsUploading(true);
@@ -107,20 +110,66 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
         }
     };
 
+    const handleGetLocation = () => {
+        if (!handleActionCheck()) return;
+        if (isGettingLocation) return;
+        
+        setIsGettingLocation(true);
+        
+        if (!navigator.geolocation) {
+          toast.error("Geolocation is not supported by your browser");
+          setIsGettingLocation(false);
+          return;
+        }
+    
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
+              );
+              const data = await response.json();
+              
+              if (data && data.display_name) {
+                const addr = data.address;
+                const city = addr.city || addr.town || addr.village || addr.suburb || "";
+                const country = addr.country || "";
+                const locationName = city ? `${city}, ${country}` : data.display_name.split(',').slice(0, 2).join(',');
+                setLocation(locationName);
+                toast.success(`Location set to ${locationName}`);
+              } else {
+                setLocation(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+              }
+            } catch (error) {
+              console.error("Error fetching location name:", error);
+              toast.error("Failed to get location name.");
+            } finally {
+              setIsGettingLocation(false);
+            }
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            toast.error("Location permission denied.");
+            setIsGettingLocation(false);
+          }
+        );
+      };
+
     const handlePost = async () => {
         if (!handleActionCheck()) return;
-        if ((!content.trim() && !image) || isPending || isUploading) return;
+        if ((!content.trim() && !image && !location) || isPending || isUploading) return;
 
         startTransition(async () => {
-            const res = await createPost(content, image || undefined);
+            const res = await createPost(content, image || undefined, location || undefined);
             if (res?.success) {
-                // We could re-fetch or optimistically update
-                // For simplicity, revalidating path usually works, but for instant UI we can update local state
-                // But createPost returns {success: true}, not the post.
-                // Revalidating is fine for creation, but for deletion we want instant.
                 setContent("");
                 setImage(null);
+                setLocation(null);
                 setShowEmojiPicker(false);
+                toast.success("Post created successfully!");
+            } else {
+                toast.error(res?.error || "Failed to create post");
             }
         });
     };
@@ -144,12 +193,6 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
         }, 0);
     };
 
-
-
-
-
-
-
     return (
         <section className="col-span-1 lg:col-span-6 lg:border-r lg:border-zinc-800 h-full overflow-y-auto pb-16 lg:pb-0 scrollbar-hide">
             {/* Mobile Header */}
@@ -167,7 +210,6 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                 <h1 className="text-lg font-bold lg:hidden">Home</h1>
 
                 <div className="flex items-center gap-3 lg:hidden">
-                    {/* Placeholder for future mobile header right actions */}
                     <div className="w-9" /> 
                 </div>
             </header>
@@ -193,6 +235,16 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                             placeholder="What's happening in your mind?"
                             className="min-h-[50px] w-full resize-none bg-transparent text-base outline-none placeholder:text-zinc-500 sm:text-lg"
                         />
+
+                        {location && (
+                          <div className="mt-1 flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 w-fit px-2.5 py-0.5 rounded-full text-xs font-medium border border-emerald-500/20 mb-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>{location}</span>
+                            <button onClick={() => setLocation(null)} className="ml-0.5 hover:text-white transition">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
 
                         {/* Image Preview */}
                         {(image || isUploading) && (
@@ -236,12 +288,11 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploading || isPending}
                                     className="rounded-full p-2 text-emerald-400 transition hover:bg-emerald-500/10 disabled:opacity-50"
+                                    title="Add Image"
                                 >
                                     <ImageIcon className="h-5 w-5" />
                                 </button>
-                                <button className="rounded-full p-2 text-emerald-400 transition hover:bg-emerald-500/10">
-                                    <Code2 className="h-5 w-5" />
-                                </button>
+                                
                                 <div className="relative">
                                     <button
                                         onClick={() => {
@@ -260,7 +311,7 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                                                 className="fixed inset-0 z-30"
                                                 onClick={() => setShowEmojiPicker(false)}
                                             />
-                                            <div className="absolute bottom-full left-0 mb-2 z-40 shadow-2xl">
+                                            <div className="absolute top-full left-0 mt-2 z-40 shadow-2xl">
                                                 <EmojiPicker
                                                     onEmojiClick={onEmojiClick}
                                                     theme={"dark" as any}
@@ -272,11 +323,20 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
                                         </>
                                     )}
                                 </div>
+
+                                <button 
+                                  onClick={handleGetLocation}
+                                  disabled={isGettingLocation}
+                                  className={`rounded-full p-2 transition ${location ? 'bg-emerald-500/20 text-emerald-400' : 'text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50'}`}
+                                  title="Add Location"
+                                >
+                                  {isGettingLocation ? <Loader2 className="h-5 w-5 animate-spin" /> : <MapPin className="h-5 w-5" />}
+                                </button>
                             </div>
 
                             <button
                                 onClick={handlePost}
-                                disabled={(!content.trim() && !image) || isPending || isUploading}
+                                disabled={(!content.trim() && !image && !location) || isPending || isUploading}
                                 className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
                             >
                                 {isPending ? "Posting..." : isUploading ? "Uploading..." : "Post"}
@@ -310,7 +370,5 @@ export function Feed({ initialPosts, currentUserId }: FeedProps) {
             </div>
 
         </section>
-
-
     );
 }

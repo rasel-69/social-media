@@ -47,6 +47,11 @@ export async function GET(req: NextRequest) {
           },
           include: {
             sender: { select: { id: true, name: true, image: true, username: true } },
+            post: {
+              include: {
+                author: { select: { id: true, name: true, image: true, username: true } }
+              }
+            }
           },
           orderBy: { createdAt: "asc" }
         });

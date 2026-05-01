@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageInput } from "./message-input";
 import { getMessages, markAsRead } from "@/app/actions/message";
-import { Loader2, Info, X } from "lucide-react";
+import { Loader2, Info, X, Mic } from "lucide-react";
 import { format } from "date-fns";
 
 interface ChatAreaProps {
@@ -239,7 +239,28 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                           </Link>
                         </div>
                       )}
-                      <span>{msg.content}</span>
+                      {msg.audioUrl && (
+                        <div className={`mb-2 p-2 rounded-xl flex items-center gap-3 min-w-[200px] ${
+                          isMe ? "bg-emerald-600/30" : "bg-black/40"
+                        }`}>
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                            isMe ? "bg-emerald-400 text-black" : "bg-emerald-500 text-black"
+                          }`}>
+                            <Mic className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <audio 
+                              src={msg.audioUrl} 
+                              controls 
+                              className={`h-8 w-full max-w-[240px] custom-audio-player ${
+                                isMe ? "brightness-110 contrast-125" : ""
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {msg.content && <span>{msg.content}</span>}
                     </div>
                   </div>
                   

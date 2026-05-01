@@ -29,15 +29,19 @@ export function Sidebar() {
 
   useEffect(() => {
     setMounted(true);
-    if (session) {
+    const userId = session?.user?.id;
+    if (userId) {
+      // Initial fetch
       getUnreadCount().then(count => setUnreadCount(count));
+      
       // Poll unread count every 15s
       const interval = setInterval(() => {
         getUnreadCount().then(count => setUnreadCount(count));
       }, 15000);
+      
       return () => clearInterval(interval);
     }
-  }, [session]);
+  }, [session?.user?.id]);
 
   const handleLogout = async () => {
     await authClient.signOut();

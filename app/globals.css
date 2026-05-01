@@ -128,3 +128,18 @@
     @apply font-sans;
   }
 }
+
+/* Custom Audio Player Styling */
+.custom-audio-player::-webkit-media-controls-panel {
+  background-color: #18181b;
+}
+
+.custom-audio-player::-webkit-media-controls-play-button,
+.custom-audio-player::-webkit-media-controls-mute-button {
+  filter: invert(1);
+}
+
+.custom-audio-player::-webkit-media-controls-current-time-display,
+.custom-audio-player::-webkit-media-controls-time-remaining-display {
+  color: #10b981;
+}

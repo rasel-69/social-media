@@ -163,14 +163,14 @@ export async function getMessages(conversationId: string, limit = 50) {
 }
 
 // 4. Send a message
-export async function sendMessage(conversationId: string, content: string) {
+export async function sendMessage(conversationId: string, content: string, audioUrl?: string) {
   try {
     const session = await getSession();
     if (!session) throw new Error("Unauthorized");
 
     const currentUserId = session.user.id;
 
-    if (!content.trim()) throw new Error("Message cannot be empty");
+    if (!content.trim() && !audioUrl) throw new Error("Message cannot be empty");
 
     // Verify conversation
     const conversation = await prisma.conversation.findUnique({
@@ -194,11 +194,14 @@ export async function sendMessage(conversationId: string, content: string) {
 
     if (!isFriend) throw new Error("You are no longer friends with this user");
 
+    const lastMsgPreview = content.trim() ? content : "🎤 Audio message";
+
     // Start transaction to save message and update conversation's last message
     const [message] = await prisma.$transaction([
       prisma.message.create({
         data: {
           content,
+          audioUrl,
           senderId: currentUserId,
           conversationId,
         },
@@ -209,7 +212,7 @@ export async function sendMessage(conversationId: string, content: string) {
       prisma.conversation.update({
         where: { id: conversationId },
         data: {
-          lastMessage: content,
+          lastMessage: lastMsgPreview,
           lastMsgAt: new Date(),
         },
       }),
@@ -231,7 +234,7 @@ export async function markAsRead(conversationId: string) {
 
     const currentUserId = session.user.id;
 
-    await prisma.message.updateMany({
+    const result = await prisma.message.updateMany({
       where: {
         conversationId,
         senderId: { not: currentUserId },
@@ -240,7 +243,9 @@ export async function markAsRead(conversationId: string) {
       data: { isRead: true },
     });
     
-    revalidatePath(`/Messages`);
+    if (result.count > 0) {
+      revalidatePath(`/Messages`);
+    }
     return { success: true };
   } catch (error) {
     console.error("Error marking messages as read:", error);

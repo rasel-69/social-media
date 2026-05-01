@@ -8,6 +8,11 @@ export const ourFileRouter = {
       console.log("Upload complete:", file.url);
       return { url: file.url };
     }),
+  audioUploader: f({ audio: { maxFileSize: "16MB", maxFileCount: 1 } })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Audio upload complete:", file.url);
+      return { url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

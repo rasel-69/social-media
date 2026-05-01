@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { FriendsGrid } from "./friends-grid";
 import { ChatArea } from "./chat-area";
 import { getOrCreateConversation } from "@/app/actions/message";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface MessagesLayoutProps {
   initialConversations: any[];
@@ -19,7 +19,7 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStartingChat, setIsStartingChat] = useState(false);
 
-  const handleStartChat = async (friendId: string) => {
+  const handleStartChat = useCallback(async (friendId: string) => {
     setIsStartingChat(true);
     try {
       const res = await getOrCreateConversation(friendId);
@@ -41,16 +41,16 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
     } finally {
       setIsStartingChat(false);
     }
-  };
+  }, []);
 
-  const handleMessageAdded = (msg: any) => {
+  const handleMessageAdded = useCallback((msg: any) => {
     // Update conversation list with latest message
     setConversations(prev => {
       const newConvs = [...prev];
       const index = newConvs.findIndex(c => c.id === msg.conversationId);
       
       if (index !== -1) {
-        const conv = newConvs[index];
+        const conv = { ...newConvs[index] };
         conv.lastMessage = msg.content;
         conv.lastMsgAt = msg.createdAt;
         // Move to top
@@ -59,7 +59,7 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
       }
       return newConvs;
     });
-  };
+  }, []);
 
   return (
     <div className="flex h-full w-full bg-black overflow-hidden relative">
@@ -112,4 +112,3 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
     </div>
   );
 }
-

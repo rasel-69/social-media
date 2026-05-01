@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, MessageCircle, Share2 } from "lucide-react";
+import { Loader2, MessageCircle, Share2, MapPin } from "lucide-react";
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -80,15 +80,23 @@ export function PostCard({ post, isOwner, currentUserId, onDelete, initialShowCo
 
         <div className="flex-1">
           <div className="flex items-center justify-between relative">
-            <div className="flex items-center gap-1">
-              <Link href={`/Profile/${post.author.username || post.authorId}`} className="font-bold text-white hover:underline">
-                {displayName}
-              </Link>
-              <span className="text-zinc-500 text-sm">@{post.author.username || "user"}</span>
-              <span className="text-zinc-500 text-sm">·</span>
-              <span className="text-zinc-500 text-sm" suppressHydrationWarning>
-                {new Date(post.createdAt).toLocaleDateString()}
-              </span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <Link href={`/Profile/${post.author.username || post.authorId}`} className="font-bold text-white hover:underline text-sm sm:text-base">
+                  {displayName}
+                </Link>
+                <span className="text-zinc-500 text-xs sm:text-sm">@{post.author.username || "user"}</span>
+                <span className="text-zinc-500 text-xs sm:text-sm">·</span>
+                <span className="text-zinc-500 text-xs sm:text-sm" suppressHydrationWarning>
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              {(post as any).location && (
+                <div className="flex items-center gap-1 text-emerald-500/80 text-[11px] font-medium -mt-0.5">
+                  <MapPin className="h-3 w-3" />
+                  <span>{(post as any).location}</span>
+                </div>
+              )}
             </div>
 
             <PostMenu
