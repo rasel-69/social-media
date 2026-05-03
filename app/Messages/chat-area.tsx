@@ -6,6 +6,8 @@ import { MessageInput } from "./message-input";
 import { getMessages, markAsRead } from "@/app/actions/message";
 import { Loader2, Info, X, Mic } from "lucide-react";
 import { format } from "date-fns";
+import { db } from "@/lib/firebase";
+import { ref, onChildAdded } from "firebase/database";
 
 interface ChatAreaProps {
   conversationId: string;
@@ -53,41 +55,24 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Polling for new messages
+  // Real-time listener for new messages via Firebase
   useEffect(() => {
     if (!conversationId) return;
 
-    const pollMessages = async () => {
-      try {
-        const url = new URL("/api/messages/poll", window.location.origin);
-        url.searchParams.set("conversationId", conversationId);
-        if (lastMessageId) {
-          url.searchParams.set("lastMessageId", lastMessageId);
-        }
-
-        const res = await fetch(url.toString());
-        if (!res.ok) return;
-        
-        const data = await res.json();
-        if (data.messages && data.messages.length > 0) {
-          setMessages(prev => {
-            const newMessages = data.messages.filter((m: any) => !prev.some(p => p.id === m.id));
-            if (newMessages.length === 0) return prev;
-            return [...prev, ...newMessages];
-          });
-          setLastMessageId(data.messages[data.messages.length - 1].id);
-          
-          // Notify parent (layout) to update sidebar
-          onMessageAdded(data.messages[data.messages.length - 1]);
-        }
-      } catch (error) {
-        console.error("Polling error:", error);
+    const messagesRef = ref(db, `messages/${conversationId}`);
+    
+    // Listen for new messages
+    const unsubscribe = onChildAdded(messagesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // We convert string date back to Date object if needed, 
+        // though chat-area seems to handle string dates fine via new Date()
+        handleNewMessage(data);
       }
-    };
+    });
 
-    const interval = setInterval(pollMessages, 2000);
-    return () => clearInterval(interval);
-  }, [conversationId, lastMessageId, onMessageAdded]);
+    return () => unsubscribe();
+  }, [conversationId]);
 
   const handleNewMessage = (newMessage: any) => {
     setMessages(prev => {

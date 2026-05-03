@@ -4,6 +4,7 @@ import prisma from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { adminDb } from "@/lib/firebase-admin";
 
 async function getSession() {
   const session = await auth.api.getSession({
@@ -218,6 +219,16 @@ export async function sendMessage(conversationId: string, content: string, audio
       }),
     ]);
 
+    // Push to Firebase for real-time update
+    try {
+      await adminDb.ref(`messages/${conversationId}`).push({
+        ...message,
+        createdAt: message.createdAt.toISOString(),
+      });
+    } catch (firebaseError) {
+      console.error("Firebase push error:", firebaseError);
+    }
+
     revalidatePath(`/Messages`);
     return { success: true, message };
   } catch (error: any) {
@@ -325,6 +336,16 @@ export async function sendPostInMessage(postId: string, friendId: string) {
         },
       }),
     ]);
+
+    // Push to Firebase for real-time update
+    try {
+      await adminDb.ref(`messages/${conversationId}`).push({
+        ...message,
+        createdAt: message.createdAt.toISOString(),
+      });
+    } catch (firebaseError) {
+      console.error("Firebase push error:", firebaseError);
+    }
 
     revalidatePath(`/Messages`);
     return { success: true, message };
