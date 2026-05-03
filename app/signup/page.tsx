@@ -53,17 +53,8 @@ export default function SignUpPage() {
     };
 
     const handleGoogleLogin = async () => {
-        setIsGoogleLoading(true);
-        setError("");
-        try {
-            await authClient.signIn.social({
-                provider: "google",
-                callbackURL: "/",
-            });
-        } catch (err) {
-            setError("Could not sign in with Google. Please try again.");
-            setIsGoogleLoading(false);
-        }
+        // Disabled as per user request
+        alert("Google login is currently disabled.");
     };
 
     return (

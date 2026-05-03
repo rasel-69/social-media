@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export default function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const sessionCookie = request.cookies.get("better-auth.session_token") || 
                          request.cookies.get("__Secure-better-auth.session_token");
 
@@ -10,7 +10,12 @@ export default function middleware(request: NextRequest) {
     // Define strictly private routes that ALWAYS require a login
     const isProtectedRoute = pathname.startsWith("/Notifications") ||
                              pathname.startsWith("/Messages") ||
-                             pathname.startsWith("/Post/new");
+                             pathname.startsWith("/Post/new") ||
+                             pathname.startsWith("/notifications") ||
+                             pathname.startsWith("/messages") ||
+                             pathname.startsWith("/post") ||
+                             pathname.startsWith("/profile") ||
+                             pathname.startsWith("/Profile");
     
     // Auth routes (Login/Signup)
     const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
@@ -30,6 +35,7 @@ export default function middleware(request: NextRequest) {
     // 3. All other routes (/, /Profile, /Explore, etc.) are now public for viewing
     return NextResponse.next();
 }
+
 
 export const config = {
     // Match all paths except static files and api

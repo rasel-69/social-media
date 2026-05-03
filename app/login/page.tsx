@@ -45,17 +45,8 @@ export default function LoginPage() {
     };
 
     const handleGoogleLogin = async () => {
-        setIsGoogleLoading(true);
-        setError("");
-        try {
-            await authClient.signIn.social({
-                provider: "google",
-                callbackURL: callbackURL,
-            });
-        } catch (err) {
-            setError("Could not sign in with Google. Please try again.");
-            setIsGoogleLoading(false);
-        }
+        // Disabled as per user request
+        alert("Google login is currently disabled.");
     };
 
     return (
@@ -114,9 +105,9 @@ export default function LoginPage() {
                         </div>
 
                         <div className="flex items-center justify-end">
-                            <Link href="/forgot-password" title="Go to Forgot Password" className="text-sm font-medium text-emerald-400 hover:underline">
+                            <span className="text-sm font-medium text-emerald-400 cursor-not-allowed">
                                 Forgot password?
-                            </Link>
+                            </span>
                         </div>
 
                         <button

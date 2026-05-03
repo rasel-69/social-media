@@ -81,16 +81,16 @@ export function Sidebar() {
           </Link>
 
           <Link
-            href="/Explore"
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Explore" ? "text-emerald-400" : "text-white"}`}
+            href="/explore"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/explore" ? "text-emerald-400" : "text-white"}`}
           >
             <CompassIcon className="h-6 w-6" />
             Explore
           </Link>
 
           <Link
-            href="/Notifications"
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Notifications" ? "text-emerald-400" : "text-white"}`}
+            href="/notifications"
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/notifications" ? "text-emerald-400" : "text-white"}`}
           >
             <BellIcon className="h-6 w-6" />
             Notifications
