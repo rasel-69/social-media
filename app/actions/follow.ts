@@ -62,6 +62,11 @@ export async function checkIsFollowing(targetUserId: string) {
   return !!follow;
 }
 
+
+
+
+
+
 export async function checkMultipleFollowStatus(targetUserIds: string[]) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -75,7 +80,7 @@ export async function checkMultipleFollowStatus(targetUserIds: string[]) {
       followingId: { in: targetUserIds },
     },
     select: { followingId: true },
-  });
+  }) as { followingId: string }[];
 
   const followMap: Record<string, boolean> = {};
   targetUserIds.forEach(id => followMap[id] = false);
