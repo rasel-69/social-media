@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MapPin, Calendar, Link as LinkIcon, Camera, Edit, ArrowLeft, Loader2 } from "lucide-react";
+import { Calendar, Camera, ArrowLeft, Loader2 } from "lucide-react";
 import type { User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { followUser, unfollowUser } from "@/app/actions/follow";
-import { sendFriendRequest, acceptFriendRequest, rejectFriendRequest, cancelFriendRequest, removeFriend, FriendStatus } from "@/app/actions/friend";
+import { sendFriendRequest, acceptFriendRequest, cancelFriendRequest, removeFriend, FriendStatus } from "@/app/actions/friend";
 import { updateUserProfileImage, updateUserCoverImage } from "@/app/actions";
 import { useUploadThing } from "@/lib/uploadthing";
+import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,8 +20,24 @@ import {
 import { ProfileUserList } from "./profile-user-list";
 import { ProfileFriendsList } from "./profile-friends-list";
 
+interface UserWithCount {
+  id: string;
+  name: string | null;
+  username: string | null;
+  image: string | null;
+  coverImage: string | null;
+  createdAt: Date | string;
+  _count?: {
+    posts?: number;
+    followers?: number;
+    following?: number;
+    friendships1?: number;
+    friendships2?: number;
+  };
+}
+
 interface ProfileHeaderProps {
-  user: any; // Using any for now to include _count
+  user: UserWithCount;
   isOwnProfile: boolean;
   initialIsFollowing?: boolean;
   initialFriendStatus?: FriendStatus;
@@ -169,7 +186,7 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
         className={`h-48 w-full bg-gradient-to-r from-emerald-900/40 via-zinc-900 to-emerald-900/40 lg:h-64 relative group overflow-hidden ${isOwnProfile ? "cursor-pointer" : ""}`}
       >
         {user.coverImage ? (
-           <img src={user.coverImage} alt="Cover" className="h-full w-full object-cover" />
+           <Image src={user.coverImage} alt="Cover" fill className="object-cover" />
         ) : null}
         
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -197,7 +214,7 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
             className={`relative h-32 w-32 rounded-full border-4 border-black bg-zinc-900 lg:h-40 lg:w-40 overflow-hidden shadow-2xl ${isOwnProfile ? "cursor-pointer group" : ""}`}
           >
             {user.image ? (
-              <img src={user.image} alt={displayName} className="h-full w-full object-cover" />
+              <Image src={user.image} alt={displayName} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-slate-800 text-4xl font-bold text-emerald-400 uppercase">
                 {initials}

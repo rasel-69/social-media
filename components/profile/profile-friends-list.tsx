@@ -4,14 +4,22 @@ import { useEffect, useState } from "react";
 import { getUserFriends } from "@/app/actions/friend";
 import { Loader2, User as UserIcon } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+interface Friend {
+  id: string;
+  name: string;
+  username: string | null;
+  image: string | null;
+}
 
 interface ProfileFriendsListProps {
   userId: string;
 }
 
 export function ProfileFriendsList({ userId }: ProfileFriendsListProps) {
-  const [friends, setFriends] = useState<any[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -47,7 +55,7 @@ export function ProfileFriendsList({ userId }: ProfileFriendsListProps) {
           <UserIcon className="h-8 w-8 text-zinc-700" />
         </div>
         <h3 className="text-xl font-bold text-white mb-2">No friends yet</h3>
-        <p className="text-zinc-500">When they add friends, they'll show up here.</p>
+        <p className="text-zinc-500">When they add friends, they&apos;ll show up here.</p>
       </div>
     );
   }
@@ -57,9 +65,9 @@ export function ProfileFriendsList({ userId }: ProfileFriendsListProps) {
       {friends.map((friend) => (
         <div key={friend.id} className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-4 rounded-xl transition hover:border-zinc-700">
           <Link href={`/Profile/${friend.username || friend.id}`} className="shrink-0">
-            <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-zinc-800 bg-zinc-800 flex items-center justify-center font-bold text-emerald-400 text-xl">
+            <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-zinc-800 bg-zinc-800 flex items-center justify-center font-bold text-emerald-400 text-xl relative">
               {friend.image ? (
-                <img src={friend.image} alt={friend.name} className="h-full w-full object-cover" />
+                <Image src={friend.image} alt={friend.name} fill className="object-cover" />
               ) : (
                 friend.name?.[0]?.toUpperCase() || "?"
               )}

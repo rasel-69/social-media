@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 interface SharedPostProps {
   post: {
@@ -25,7 +26,7 @@ export function SharedPost({ post }: SharedPostProps) {
       <Link href={`/Profile/${post.author.username || post.authorId}`} className="flex items-center gap-2 mb-2 group/author">
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-emerald-400 uppercase overflow-hidden ring-1 ring-zinc-800 group-hover/author:ring-emerald-500/50 transition">
           {post.author.image ? (
-            <img src={post.author.image} alt={post.author.name || ""} className="h-full w-full object-cover" />
+            <Image src={post.author.image} alt={post.author.name || ""} width={24} height={24} className="h-full w-full object-cover" />
           ) : (
             authorInitials
           )}
@@ -42,7 +43,7 @@ export function SharedPost({ post }: SharedPostProps) {
       <p className="text-sm text-zinc-200 line-clamp-3 mb-2">{post.content}</p>
       {post.image && (
         <div className="overflow-hidden rounded-xl border border-zinc-800/50">
-          <img src={post.image} alt="Original post" className="max-h-60 w-full object-cover" />
+          <Image src={post.image} alt="Original post" width={500} height={300} className="max-h-60 w-full object-cover" />
         </div>
       )}
     </div>

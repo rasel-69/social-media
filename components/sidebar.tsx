@@ -12,6 +12,7 @@ import {
   LogOut,
   LogIn
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -29,6 +30,9 @@ export function Sidebar() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
     const userId = session?.user?.id;
     if (userId) {
       // Initial fetch
@@ -56,10 +60,16 @@ export function Sidebar() {
     }
   };
 
+  const handleAuthRedirect = (e: React.MouseEvent, target: string) => {
+    if (!session) {
+      e.preventDefault();
+      router.push(`/login?callbackURL=${target}`);
+    }
+  };
+
   const handleProfileRedirect = (e: React.MouseEvent) => {
     if (!session) {
       e.preventDefault();
-      toast.error("Please login");
       router.push("/login?callbackURL=/Profile");
     }
   };
@@ -82,6 +92,7 @@ export function Sidebar() {
 
           <Link
             href="/explore"
+            onClick={(e) => handleAuthRedirect(e, "/explore")}
             className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/explore" ? "text-emerald-400" : "text-white"}`}
           >
             <CompassIcon className="h-6 w-6" />
@@ -90,6 +101,7 @@ export function Sidebar() {
 
           <Link
             href="/notifications"
+            onClick={(e) => handleAuthRedirect(e, "/notifications")}
             className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/notifications" ? "text-emerald-400" : "text-white"}`}
           >
             <BellIcon className="h-6 w-6" />
@@ -98,6 +110,7 @@ export function Sidebar() {
 
           <Link
             href="/Messages"
+            onClick={(e) => handleAuthRedirect(e, "/Messages")}
             className={`flex w-full items-center justify-between rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Messages" || pathname.startsWith("/Messages/") ? "text-emerald-400" : "text-white"}`}
           >
             <div className="flex items-center gap-3">
@@ -136,7 +149,7 @@ export function Sidebar() {
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-800 font-bold text-emerald-400 uppercase overflow-hidden">
                   {session.user.image ? (
-                    <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
+                    <Image src={session.user.image} alt="User" width={44} height={44} className="h-full w-full object-cover" />
                   ) : (
                     session.user.name?.[0] || "?"
                   )}

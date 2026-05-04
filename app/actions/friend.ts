@@ -280,7 +280,7 @@ export async function getSuggestedFriends() {
       },
     });
 
-    const friendIds = friendships.flatMap((f) => 
+    const friendIds = friendships.flatMap((f: { userId1: string; userId2: string }) => 
       f.userId1 === currentUserId ? [f.userId2] : [f.userId1]
     );
 
@@ -294,7 +294,7 @@ export async function getSuggestedFriends() {
       },
     });
 
-    const requestedIds = requests.flatMap((r) => 
+    const requestedIds = requests.flatMap((r: { senderId: string; receiverId: string }) => 
       r.senderId === currentUserId ? [r.receiverId] : [r.senderId]
     );
 

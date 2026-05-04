@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { followUser, unfollowUser } from "@/app/actions/follow";
-import { UserCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface UserFollowCardProps {
   user: {
@@ -22,6 +22,10 @@ export function UserFollowCard({ user, initialIsFollowing = false, currentUserId
   const [isPending, startTransition] = useTransition();
 
   const handleToggleFollow = () => {
+    if (!currentUserId) {
+      window.location.href = "/login?callbackURL=" + window.location.pathname;
+      return;
+    }
     // Optimistic update
     const newValue = !isFollowing;
     setIsFollowing(newValue);
@@ -50,7 +54,7 @@ export function UserFollowCard({ user, initialIsFollowing = false, currentUserId
       <Link href={`/Profile/${user.username || user.id}`} className="flex items-center gap-3 group">
         <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-800 text-sm font-bold text-emerald-400 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors">
           {user.image ? (
-            <img src={user.image} alt={displayName} className="h-full w-full object-cover" />
+            <Image src={user.image} alt={displayName} width={40} height={40} className="h-full w-full object-cover" />
           ) : (
             initials
           )}

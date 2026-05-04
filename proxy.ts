@@ -15,7 +15,9 @@ export function proxy(request: NextRequest) {
                              pathname.startsWith("/messages") ||
                              pathname.startsWith("/post") ||
                              pathname.startsWith("/profile") ||
-                             pathname.startsWith("/Profile");
+                             pathname.startsWith("/Profile") ||
+                             pathname.startsWith("/explore") ||
+                             pathname.startsWith("/Explore");
     
     // Auth routes (Login/Signup)
     const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup");
