@@ -50,6 +50,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     await authClient.signOut();
     router.refresh();
+    router.push('/login');
   };
 
   // Logic to handle restricted "Post" access
