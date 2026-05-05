@@ -48,9 +48,13 @@ export function Sidebar() {
   }, [session?.user?.id]);
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    router.refresh();
-    router.push('/login');
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login");
+        },
+      },
+    });
   };
 
   // Logic to handle restricted "Post" access

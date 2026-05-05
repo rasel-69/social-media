@@ -11,12 +11,7 @@ import { useUploadThing } from "@/lib/uploadthing";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { ProfileUserList } from "./profile-user-list";
 import { ProfileFriendsList } from "./profile-friends-list";
 
@@ -323,6 +318,9 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
             <DialogTitle className="sr-only">
               Connections
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              View your friends, followers, and following lists.
+            </DialogDescription>
             <div className="flex">
               <button
                 onClick={() => setModalType("friends")}

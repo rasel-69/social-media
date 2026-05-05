@@ -27,19 +27,22 @@ function LoginContent() {
         e.preventDefault();
         setIsLoading(true);
         setError("");
-
-        const { data, error: loginError } = await authClient.signIn.email({
-            email,
-            password,
-            callbackURL: callbackURL, // Better for Better-Auth to handle internal redirects
-        });
-
-        if (loginError) {
-            setError(loginError.message || "Invalid credentials.");
+        try {
+            const { data, error: loginError } = await authClient.signIn.email({
+                email,
+                password,
+                callbackURL: callbackURL,
+            });
+            if (loginError) {
+                setError(loginError.message || "Invalid credentials.");
+            } else {
+                // Successful login, navigate to callback URL
+                router.push(callbackURL);
+            }
+        } catch (err) {
+            setError("An unexpected error occurred.");
+        } finally {
             setIsLoading(false);
-        } else {
-            // Manual fallback if callbackURL isn't handled by the client automatically
-            router.push(callbackURL);
         }
     };
 

@@ -170,21 +170,27 @@ export async function sendMessage(conversationId: string, content: string, audio
     if (!session) throw new Error("Unauthorized");
 
     const currentUserId = session.user.id;
-
     if (!content.trim() && !audioUrl) throw new Error("Message cannot be empty");
 
-    // Verify conversation
+    // Combine conversation and friendship check into one query if possible
+    // or at least optimize the existing ones.
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
+      include: {
+        user1: { select: { id: true } },
+        user2: { select: { id: true } },
+      }
     });
 
-    if (!conversation || (conversation.user1Id !== currentUserId && conversation.user2Id !== currentUserId)) {
-      throw new Error("Invalid conversation");
-    }
+    if (!conversation) throw new Error("Invalid conversation");
+    
+    const isParticipant = conversation.user1Id === currentUserId || conversation.user2Id === currentUserId;
+    if (!isParticipant) throw new Error("Unauthorized access to conversation");
 
-    // Verify friendship is still active
     const friendId = conversation.user1Id === currentUserId ? conversation.user2Id : conversation.user1Id;
-    const isFriend = await prisma.friendship.findFirst({
+
+    // Check friendship exists and is active
+    const friendship = await prisma.friendship.findFirst({
       where: {
         OR: [
           { userId1: currentUserId, userId2: friendId },
@@ -193,11 +199,11 @@ export async function sendMessage(conversationId: string, content: string, audio
       },
     });
 
-    if (!isFriend) throw new Error("You are no longer friends with this user");
+    if (!friendship) throw new Error("You are no longer friends with this user");
 
     const lastMsgPreview = content.trim() ? content : "🎤 Audio message";
 
-    // Start transaction to save message and update conversation's last message
+    // Optimized transaction: Create message and update conversation
     const [message] = await prisma.$transaction([
       prisma.message.create({
         data: {
@@ -219,17 +225,28 @@ export async function sendMessage(conversationId: string, content: string, audio
       }),
     ]);
 
-    // Push to Firebase for real-time update
-    try {
-      await adminDb.ref(`messages/${conversationId}`).push({
+    // Side effects: Firebase push and Revalidation
+    // We wrap these to ensure they don't block each other if one fails
+    const sideEffects = [
+      adminDb.ref(`messages/${conversationId}`).push({
         ...message,
         createdAt: message.createdAt.toISOString(),
-      });
-    } catch (firebaseError) {
-      console.error("Firebase push error:", firebaseError);
-    }
+      }).catch(e => console.error("Firebase push error:", e)),
+      
+      // revalidatePath is critical for the UI to update unread counts etc.
+      (async () => {
+        try {
+          revalidatePath(`/Messages`);
+        } catch (e) {
+          console.error("Revalidation error:", e);
+        }
+      })()
+    ];
 
-    revalidatePath(`/Messages`);
+    // Wait for critical side effects if necessary, or just return
+    // In Next.js Server Actions, awaiting revalidatePath is usually recommended
+    await Promise.all(sideEffects);
+
     return { success: true, message };
   } catch (error: any) {
     console.error("Error sending message:", error);
@@ -272,11 +289,24 @@ export async function getUnreadCount() {
 
     const currentUserId = session.user.id;
 
+    // Optimize: Get conversation IDs first to avoid expensive join in count query
+    const userConversations = await prisma.conversation.findMany({
+      where: {
+        OR: [
+          { user1Id: currentUserId },
+          { user2Id: currentUserId }
+        ]
+      },
+      select: { id: true }
+    });
+
+    const conversationIds = userConversations.map(c => c.id);
+
+    if (conversationIds.length === 0) return 0;
+
     const count = await prisma.message.count({
       where: {
-        conversation: {
-          OR: [{ user1Id: currentUserId }, { user2Id: currentUserId }],
-        },
+        conversationId: { in: conversationIds },
         senderId: { not: currentUserId },
         isRead: false,
       },

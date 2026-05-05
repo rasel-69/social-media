@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { FriendsGrid } from "./friends-grid";
 import { ChatArea } from "./chat-area";
 import { getOrCreateConversation } from "@/app/actions/message";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 
 interface MessagesLayoutProps {
@@ -78,6 +78,9 @@ export function MessagesLayout({ initialConversations, currentUserId, friends }:
               <DialogTitle>
                 {activeConversation ? `Chat with ${activeConversation.user.name}` : "Chat"}
               </DialogTitle>
+              <DialogDescription>
+                Real-time conversation with {activeConversation?.user.name || "a friend"}.
+              </DialogDescription>
             </DialogHeader>
           </div>
 

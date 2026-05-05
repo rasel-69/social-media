@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { Share2, Smile, Loader2, Send, Search, Users, Globe } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -131,6 +131,9 @@ export function ShareDialog({ isOpen, onOpenChange, post, currentUser, onSuccess
             <Share2 className="h-5 w-5 text-emerald-500" />
             Share Post
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Share this post to your feed or send it as a message to a friend.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Custom Tabs */}

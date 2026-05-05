@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { GraduationCap, Briefcase, MapPin, Edit2, UserCircle, Loader2 } from "lucide-react";
 import { updateProfile } from "@/app/actions/user";
 import { toast } from "sonner";
@@ -80,6 +80,9 @@ export function AboutTab({ user, isOwnProfile }: AboutTabProps) {
               <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold">Edit About Information</DialogTitle>
+                  <DialogDescription className="sr-only">
+                    Update your personal information including your bio, education, work, and location.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">

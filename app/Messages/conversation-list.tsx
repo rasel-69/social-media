@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, Edit, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 
 interface ConversationListProps {
   conversations: any[];
@@ -54,6 +54,9 @@ export function ConversationList({ conversations, activeId, onSelect, isMobile =
             <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>New Message</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Start a new conversation with one of your friends.
+                </DialogDescription>
               </DialogHeader>
               <div className="mt-4">
                 <div className="relative mb-4">

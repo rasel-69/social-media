@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getPostReactions } from "@/app/actions";
 import { Loader2, User as UserIcon } from "lucide-react";
 import Link from "next/link";
@@ -50,6 +50,9 @@ export function ReactionDialog({ isOpen, onOpenChange, postId }: ReactionDialogP
       <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[450px] rounded-2xl p-0 overflow-hidden">
         <DialogHeader className="p-4 border-b border-zinc-900">
           <DialogTitle className="text-lg font-bold">People who reacted</DialogTitle>
+          <DialogDescription className="sr-only">
+            A list of users who have reacted to this post.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Tabs */}
