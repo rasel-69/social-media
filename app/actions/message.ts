@@ -289,24 +289,14 @@ export async function getUnreadCount() {
 
     const currentUserId = session.user.id;
 
-    // Optimize: Get conversation IDs first to avoid expensive join in count query
-    const userConversations = await prisma.conversation.findMany({
-      where: {
-        OR: [
-          { user1Id: currentUserId },
-          { user2Id: currentUserId }
-        ]
-      },
-      select: { id: true }
-    });
-
-    const conversationIds = userConversations.map(c => c.id);
-
-    if (conversationIds.length === 0) return 0;
-
     const count = await prisma.message.count({
       where: {
-        conversationId: { in: conversationIds },
+        conversation: {
+          OR: [
+            { user1Id: currentUserId },
+            { user2Id: currentUserId }
+          ]
+        },
         senderId: { not: currentUserId },
         isRead: false,
       },
@@ -314,6 +304,7 @@ export async function getUnreadCount() {
 
     return count;
   } catch (error) {
+    console.error("Error in getUnreadCount:", error);
     return 0;
   }
 }

@@ -45,24 +45,26 @@ export function UserFollowCard({ user, initialIsFollowing = false, currentUserId
     });
   };
 
-  const displayName = user.name || user.username || "User";
-  const displayUsername = user.username || user.id.substring(0, 8);
-  const initials = displayName[0]?.toUpperCase() || "U";
+  const rawUsername = user.username || user.id || "";
+  const shortUsername = rawUsername.length > 3 ? rawUsername.substring(0, 3) : rawUsername;
+  const name = user.name || "User";
+  const formattedHandle = `@${name.replace(/\s+/g, '')}${shortUsername}`;
+  const initials = (user.name?.[0] || rawUsername[0] || "U").toUpperCase();
 
   return (
     <div className="flex items-center justify-between py-2">
       <Link href={`/Profile/${user.username || user.id}`} className="flex items-center gap-3 group">
         <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-800 text-sm font-bold text-emerald-400 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors">
           {user.image ? (
-            <Image src={user.image} alt={displayName} width={40} height={40} className="h-full w-full object-cover" />
+            <Image src={user.image} alt={name} width={40} height={40} className="h-full w-full object-cover" />
           ) : (
             initials
           )}
         </div>
 
         <div className="flex flex-col">
-          <h3 className="text-sm font-bold group-hover:underline">{displayName}</h3>
-          <p className="text-xs text-zinc-500">@{displayUsername}</p>
+          <h3 className="text-sm font-bold group-hover:underline">{name}</h3>
+          <p className="text-xs text-zinc-500">{formattedHandle}</p>
         </div>
       </Link>
 

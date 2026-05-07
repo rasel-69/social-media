@@ -40,6 +40,11 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
     });
   };
 
+  const rawUsername = user.username || user.id || "";
+  const shortUsername = rawUsername.length > 3 ? rawUsername.substring(0, 3) : rawUsername;
+  const name = user.name || "User";
+  const formattedHandle = `@${name.replace(/\s+/g, '')}${shortUsername}`;
+
   if (dismissed) return null;
 
   return (
@@ -62,9 +67,9 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
           <div className="h-20 w-20 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-2xl shadow-xl transition-transform group-hover:scale-110 duration-500">
             {user.image ? (
-              <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+              <img src={user.image} alt={name} className="h-full w-full object-cover" />
             ) : (
-              user.name?.[0]?.toUpperCase() || "?"
+              name?.[0]?.toUpperCase() || "?"
             )}
           </div>
         </div>
@@ -75,9 +80,9 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
           href={`/Profile/${user.username || user.id}`}
           className="font-extrabold text-lg text-white hover:text-emerald-400 transition-colors line-clamp-1"
         >
-          {user.name}
+          {name}
         </Link>
-        <p className="text-sm text-zinc-500 mb-6 line-clamp-1">@{user.username || "user"}</p>
+        <p className="text-sm text-zinc-500 mb-6 line-clamp-1">{formattedHandle}</p>
 
         <div className="mt-auto w-full">
           <button

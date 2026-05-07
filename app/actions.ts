@@ -567,3 +567,21 @@ export async function markNotificationsAsRead() {
     return { success: false };
   }
 }
+export async function getUnreadNotificationCount() {
+  try {
+    const session = await getSession();
+    if (!session) return 0;
+
+    const count = await (prisma as any).notification.count({
+      where: {
+        userId: session.user.id,
+        isRead: false,
+      },
+    });
+
+    return count;
+  } catch (error) {
+    console.error("Error in getUnreadNotificationCount:", error);
+    return 0;
+  }
+}

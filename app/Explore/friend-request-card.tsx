@@ -13,7 +13,7 @@ interface FriendRequestCardProps {
     username: string | null;
     image: string | null;
   };
-  createdAt: Date;
+  createdAt: string; // Serialized date from server
 }
 
 export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
@@ -21,12 +21,17 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
   const [isPendingReject, startReject] = useTransition();
   const [status, setStatus] = useState<"pending" | "accepted" | "rejected">("pending");
 
+  const rawUsername = user.username || user.id || "";
+  const shortUsername = rawUsername.length > 3 ? rawUsername.substring(0, 3) : rawUsername;
+  const name = user.name || "User";
+  const formattedHandle = `@${name.replace(/\s+/g, '')}${shortUsername}`;
+
   const handleAccept = () => {
     startAccept(async () => {
       const res = await acceptFriendRequest(user.id);
       if (res.success) {
         setStatus("accepted");
-        toast.success(`You and ${user.name} are now friends!`);
+        toast.success(`You and ${name} are now friends!`);
       } else {
         toast.error(res.error || "Failed to accept request");
       }
@@ -60,9 +65,9 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
           <div className="h-20 w-20 rounded-full border-4 border-zinc-900 bg-zinc-800 overflow-hidden flex items-center justify-center font-bold text-emerald-400 text-2xl shadow-xl transition-transform hover:scale-105 duration-500">
             {user.image ? (
-              <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+              <img src={user.image} alt={name} className="h-full w-full object-cover" />
             ) : (
-              user.name?.[0]?.toUpperCase() || "?"
+              name?.[0]?.toUpperCase() || "?"
             )}
           </div>
         </div>
@@ -73,9 +78,9 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
           href={`/Profile/${user.username || user.id}`}
           className="font-extrabold text-lg text-white hover:text-emerald-400 transition-colors line-clamp-1"
         >
-          {user.name}
+          {name}
         </Link>
-        <p className="text-sm text-zinc-500 line-clamp-1">@{user.username || "user"}</p>
+        <p className="text-sm text-zinc-500 line-clamp-1">{formattedHandle}</p>
         <p className="text-xs text-zinc-600 mt-2">{timeAgo}</p>
 
         {status === "accepted" ? (
@@ -120,9 +125,10 @@ export function FriendRequestCard({ user, createdAt }: FriendRequestCardProps) {
   );
 }
 
-function getTimeAgo(date: Date): string {
+function getTimeAgo(date: Date | string): string {
   const now = new Date();
-  const diff = now.getTime() - new Date(date).getTime();
+  const dateObj = new Date(date);
+  const diff = now.getTime() - dateObj.getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
@@ -131,5 +137,5 @@ function getTimeAgo(date: Date): string {
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
-  return new Date(date).toLocaleDateString();
+  return dateObj.toLocaleDateString();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   BellIcon,
@@ -19,6 +19,7 @@ import { authClient } from "@/lib/auth-client";
 import { User } from "@/lib/auth-types";
 import { toast } from "sonner";
 import { getUnreadCount } from "@/app/actions/message";
+import { getUnreadNotificationCount } from "@/app/actions";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export function Sidebar() {
   const user = session?.user as User | undefined;
   const [mounted, setMounted] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -35,15 +37,30 @@ export function Sidebar() {
   useEffect(() => {
     const userId = session?.user?.id;
     if (userId) {
-      // Initial fetch
-      getUnreadCount().then(count => setUnreadCount(count));
-      
-      // Poll unread count every 15s
+      const updateCounts = async () => {
+        try {
+          const [unread, notifications] = await Promise.all([
+            getUnreadCount(),
+            getUnreadNotificationCount()
+          ]);
+          setUnreadCount(unread);
+          setNotificationCount(notifications);
+        } catch (error) {
+          console.error("Error updating counts:", error);
+        }
+      };
+
+      updateCounts();
       const interval = setInterval(() => {
-        getUnreadCount().then(count => setUnreadCount(count));
+        if (session?.user?.id) {
+          updateCounts();
+        }
       }, 15000);
       
       return () => clearInterval(interval);
+    } else {
+      setUnreadCount(0);
+      setNotificationCount(0);
     }
   }, [session?.user?.id]);
 
@@ -58,21 +75,21 @@ export function Sidebar() {
   };
 
   // Logic to handle restricted "Post" access
-  const handlePostRedirect = (e: React.MouseEvent) => {
+  const handlePostRedirect = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!session) {
       e.preventDefault(); // Stop the <Link> from navigating directly
       router.push("/login?callbackURL=/Post/new");
     }
   };
 
-  const handleAuthRedirect = (e: React.MouseEvent, target: string) => {
+  const handleAuthRedirect = (e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
     if (!session) {
       e.preventDefault();
       router.push(`/login?callbackURL=${target}`);
     }
   };
 
-  const handleProfileRedirect = (e: React.MouseEvent) => {
+  const handleProfileRedirect = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!session) {
       e.preventDefault();
       router.push("/login?callbackURL=/Profile");
@@ -107,10 +124,17 @@ export function Sidebar() {
           <Link
             href="/notifications"
             onClick={(e) => handleAuthRedirect(e, "/notifications")}
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/notifications" ? "text-emerald-400" : "text-white"}`}
+            className={`flex w-full items-center justify-between rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/notifications" ? "text-emerald-400" : "text-white"}`}
           >
-            <BellIcon className="h-6 w-6" />
-            Notifications
+            <div className="flex items-center gap-3">
+              <BellIcon className="h-6 w-6" />
+              <span>Notifications</span>
+            </div>
+            {notificationCount > 0 && (
+              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-black">
+                {notificationCount > 99 ? "99+" : notificationCount}
+              </span>
+            )}
           </Link>
 
           <Link

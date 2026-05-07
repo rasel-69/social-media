@@ -44,8 +44,11 @@ export function ShareDialog({ isOpen, onOpenChange, post, currentUser, onSuccess
   const [sendingTo, setSendingTo] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const displayName = currentUser.name || currentUser.username || "Unknown User";
-  const initials = currentUser.name?.[0] || currentUser.username?.[0] || "?";
+  const rawUsername = currentUser.username || currentUser.id || "";
+  const shortUsername = rawUsername.length > 3 ? rawUsername.substring(0, 3) : rawUsername;
+  const name = currentUser.name || "User";
+  const formattedHandle = `@${name.replace(/\s+/g, '')}${shortUsername}`;
+  const initials = name[0] || "?";
 
   useEffect(() => {
     if (isOpen && activeTab === "message" && friends.length === 0) {
@@ -166,13 +169,13 @@ export function ShareDialog({ isOpen, onOpenChange, post, currentUser, onSuccess
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800 font-bold text-emerald-400 overflow-hidden shrink-0">
                   {currentUser.image ? (
-                    <img src={currentUser.image} alt={displayName} className="h-full w-full object-cover" />
+                    <img src={currentUser.image} alt={name} className="h-full w-full object-cover" />
                   ) : (
                     initials
                   )}
                 </div>
                 <div>
-                  <p className="font-bold text-sm">{displayName}</p>
+                  <p className="font-bold text-sm">{name}</p>
                   <p className="text-xs text-zinc-500">Posting to your timeline</p>
                 </div>
               </div>
@@ -243,7 +246,9 @@ export function ShareDialog({ isOpen, onOpenChange, post, currentUser, onSuccess
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-white truncate">{friend.name}</p>
-                          <p className="text-xs text-zinc-500 truncate">@{friend.username || "user"}</p>
+                          <p className="text-xs text-zinc-500 truncate">
+                            {`@${friend.name.replace(/\s+/g, '')}${(friend.username || friend.id).substring(0, 3)}`}
+                          </p>
                         </div>
                       </div>
                       <Button

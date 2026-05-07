@@ -69,10 +69,20 @@ export async function sendFriendRequest(receiverId: string) {
     const status = await getFriendStatus(receiverId);
     if (status !== "NONE") return { success: false, error: "Action not allowed" };
 
+    // Clear any existing rejected/non-pending request between these users in this direction
+    await prisma.friendRequest.deleteMany({
+      where: {
+        senderId,
+        receiverId,
+        status: { not: "PENDING" }
+      }
+    });
+
     await prisma.friendRequest.create({
       data: {
         senderId,
         receiverId,
+        status: "PENDING",
       },
     });
 
@@ -291,6 +301,7 @@ export async function getSuggestedFriends() {
           { senderId: currentUserId },
           { receiverId: currentUserId },
         ],
+        status: "PENDING",
       },
     });
 
@@ -350,7 +361,7 @@ export async function getIncomingFriendRequests() {
     return requests.map((r) => ({
       requestId: r.id,
       user: r.sender,
-      createdAt: r.createdAt,
+      createdAt: r.createdAt.toISOString(),
     }));
   } catch (error) {
     console.error("Error getting incoming friend requests:", error);
@@ -386,7 +397,7 @@ export async function getSentFriendRequests() {
     return requests.map((r) => ({
       requestId: r.id,
       user: r.receiver,
-      createdAt: r.createdAt,
+      createdAt: r.createdAt.toISOString(),
     }));
   } catch (error) {
     console.error("Error getting sent friend requests:", error);

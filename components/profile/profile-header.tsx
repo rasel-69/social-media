@@ -43,8 +43,8 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
   const router = useRouter();
   const rawUsername = user.username || user.id || "";
   const shortUsername = rawUsername.length > 3 ? rawUsername.substring(0, 3) : rawUsername;
-  const displayName = user.name || "User";
-  const formattedHandle = `@${displayName.replace(/\s+/g, '')}${shortUsername}`;
+  const name = user.name || "User";
+  const formattedHandle = `@${name.replace(/\s+/g, '')}${shortUsername}`;
   const initials = (user.name?.[0] || rawUsername[0] || "U").toUpperCase();
 
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
@@ -165,35 +165,35 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
     <div className="relative border-b border-zinc-800">
       {/* Sticky Header */}
       <div className="sticky top-0 z-30 flex items-center gap-6 bg-black/80 px-4 py-2 backdrop-blur-md">
-        <button 
+        <button
           onClick={() => router.back()}
           className="rounded-full p-2 hover:bg-zinc-900 transition"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h2 className="text-xl font-bold">{displayName}</h2>
+          <h2 className="text-xl font-bold">{name}</h2>
           <p className="text-xs text-zinc-500">{user._count?.posts || 0} posts</p>
         </div>
       </div>
 
       {/* Cover Image */}
-      <div 
+      <div
         onClick={handleCoverClick}
         className={`h-48 w-full bg-gradient-to-r from-emerald-900/40 via-zinc-900 to-emerald-900/40 lg:h-64 relative group overflow-hidden ${isOwnProfile ? "cursor-pointer" : ""}`}
       >
         {user.coverImage ? (
-           <Image src={user.coverImage} alt="Cover" fill className="object-cover" />
+          <Image src={user.coverImage} alt="Cover" fill className="object-cover" />
         ) : null}
-        
+
         <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-           {isOwnProfile && (
-             isUploadingCover ? (
-                <Loader2 className="text-white h-8 w-8 animate-spin" />
-             ) : (
-                <Camera className="text-white h-8 w-8" />
-             )
-           )}
+          {isOwnProfile && (
+            isUploadingCover ? (
+              <Loader2 className="text-white h-8 w-8 animate-spin" />
+            ) : (
+              <Camera className="text-white h-8 w-8" />
+            )
+          )}
         </div>
 
         {isUploadingCover && (
@@ -206,18 +206,18 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
       {/* Profile Info Section */}
       <div className="px-4 pb-4">
         <div className="relative -mt-16 mb-4 flex items-end justify-between lg:-mt-20">
-          <div 
+          <div
             onClick={handleImageClick}
             className={`relative h-32 w-32 rounded-full border-4 border-black bg-zinc-900 lg:h-40 lg:w-40 overflow-hidden shadow-2xl ${isOwnProfile ? "cursor-pointer group" : ""}`}
           >
             {user.image ? (
-              <Image src={user.image} alt={displayName} fill className="object-cover" />
+              <Image src={user.image} alt={name} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-slate-800 text-4xl font-bold text-emerald-400 uppercase">
                 {initials}
               </div>
             )}
-            
+
             {isOwnProfile && (
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 {isUploading ? (
@@ -244,11 +244,10 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
               <>
                 <Button
                   variant={friendStatus === "NONE" ? "default" : "outline"}
-                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${
-                    friendStatus === "NONE"
+                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${friendStatus === "NONE"
                       ? "bg-emerald-500 text-black hover:bg-emerald-400"
                       : "border-zinc-700 bg-transparent text-white hover:bg-zinc-900"
-                  }`}
+                    }`}
                   onClick={handleFriendAction}
                   disabled={isPending}
                 >
@@ -257,14 +256,13 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
                   {friendStatus === "PENDING_RECEIVED" && "Accept Request"}
                   {friendStatus === "FRIENDS" && "Friends"}
                 </Button>
-                
+
                 <Button
                   variant={isFollowing ? "outline" : "secondary"}
-                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${
-                    isFollowing
+                  className={`rounded-full px-6 py-2 text-sm font-bold transition ${isFollowing
                       ? "border-zinc-700 bg-transparent text-white hover:border-red-500 hover:bg-red-500/10 hover:text-red-500"
                       : "bg-zinc-800 text-white hover:bg-zinc-700"
-                  }`}
+                    }`}
                   onClick={handleToggleFollow}
                   disabled={isPending}
                 >
@@ -276,7 +274,7 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
         </div>
 
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-white lg:text-3xl">{displayName}</h1>
+          <h1 className="text-2xl font-bold text-white lg:text-3xl">{name}</h1>
           <p className="text-zinc-500">{formattedHandle}</p>
         </div>
 
@@ -289,21 +287,21 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
         </div>
 
         <div className="mt-4 flex gap-6">
-          <div 
+          <div
             onClick={() => openModal("friends")}
             className="flex items-center gap-1 cursor-pointer hover:underline"
           >
             <span className="font-bold text-white">{(user._count?.friendships1 || 0) + (user._count?.friendships2 || 0)}</span>
             <span className="text-zinc-500">Friends</span>
           </div>
-          <div 
+          <div
             onClick={() => openModal("following")}
             className="flex items-center gap-1 cursor-pointer hover:underline"
           >
             <span className="font-bold text-white">{user._count?.following || 0}</span>
             <span className="text-zinc-500">Following</span>
           </div>
-          <div 
+          <div
             onClick={() => openModal("followers")}
             className="flex items-center gap-1 cursor-pointer hover:underline"
           >
@@ -326,9 +324,8 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
             <div className="flex">
               <button
                 onClick={() => setModalType("friends")}
-                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
-                  modalType === "friends" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
-                }`}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${modalType === "friends" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                  }`}
               >
                 Friends
                 {modalType === "friends" && (
@@ -337,9 +334,8 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
               </button>
               <button
                 onClick={() => setModalType("followers")}
-                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
-                  modalType === "followers" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
-                }`}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${modalType === "followers" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                  }`}
               >
                 Followers
                 {modalType === "followers" && (
@@ -348,9 +344,8 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
               </button>
               <button
                 onClick={() => setModalType("following")}
-                className={`flex-1 py-4 text-sm font-bold transition-all relative ${
-                  modalType === "following" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
-                }`}
+                className={`flex-1 py-4 text-sm font-bold transition-all relative ${modalType === "following" ? "text-white" : "text-zinc-500 hover:bg-zinc-900"
+                  }`}
               >
                 Following
                 {modalType === "following" && (
@@ -362,13 +357,13 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
           <div className="max-h-[70vh] min-h-[40vh] overflow-y-auto scrollbar-hide">
             {modalType === "friends" ? (
               <div className="p-2">
-                <ProfileFriendsList userId={user.id} />
+                <ProfileFriendsList userId={user.id} currentUserId={currentUserId} />
               </div>
             ) : (
-              <ProfileUserList 
-                userId={user.id} 
-                type={modalType} 
-                currentUserId={currentUserId} 
+              <ProfileUserList
+                userId={user.id}
+                type={modalType}
+                currentUserId={currentUserId}
               />
             )}
           </div>
@@ -377,3 +372,10 @@ export function ProfileHeader({ user, isOwnProfile, initialIsFollowing = false, 
     </div>
   );
 }
+
+
+
+
+
+
+
