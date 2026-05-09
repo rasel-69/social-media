@@ -264,6 +264,9 @@ model Message {
   replies        Message[]    @relation("MessageReplies")
   reactions      MessageReaction[]
 
+  isDeletedForEveryone Boolean  @default(false)
+  deletedByIds         String[] @default([])
+
   @@index([conversationId])
   @@index([senderId])
   @@index([postId])

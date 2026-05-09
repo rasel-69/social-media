@@ -500,3 +500,95 @@ export async function reactToMessage(messageId: string, emoji: string) {
   }
 }
 
+// 10. Delete a message for me
+export async function deleteMessageForMe(messageId: string) {
+  try {
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const currentUserId = session.user.id;
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: { conversation: true },
+    });
+
+    if (!message) throw new Error("Message not found");
+
+    const { conversation } = message;
+    if (conversation.user1Id !== currentUserId && conversation.user2Id !== currentUserId) {
+      throw new Error("Unauthorized");
+    }
+
+    const updatedDeletedByIds = [...new Set([...(message.deletedByIds || []), currentUserId])];
+
+    const updatedMsg = await prisma.message.update({
+      where: { id: messageId },
+      data: {
+        deletedByIds: updatedDeletedByIds,
+      },
+    });
+
+    // We do not broadcast "delete for me" to the other user, it is a local state!
+    // But we might want to tell the current user's other sessions to hide it if they have them open.
+    revalidatePath(`/Messages`);
+    return { success: true, message: updatedMsg };
+  } catch (error: any) {
+    console.error("Error deleting message for me:", error);
+    return { success: false, error: error.message || "Failed to delete message" };
+  }
+}
+
+// 11. Delete a message for everyone
+export async function deleteMessageForEveryone(messageId: string) {
+  try {
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    const currentUserId = session.user.id;
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      select: { senderId: true, conversationId: true },
+    });
+
+    // Only sender can delete for everyone
+    if (!message || message.senderId !== currentUserId) {
+      throw new Error("Cannot delete this message for everyone");
+    }
+
+    const updatedMsg = await prisma.message.update({
+      where: { id: messageId },
+      data: {
+        isDeletedForEveryone: true,
+        content: "",
+        audioUrl: null,
+        imageUrl: null,
+        postId: null,
+      },
+      include: {
+        sender: { select: { id: true, name: true, image: true, username: true } },
+        replyTo: { select: { id: true, content: true, sender: { select: { name: true } } } },
+        reactions: true
+      }
+    });
+
+    // Notify via Firebase so it updates on receiver's end
+    try {
+      await adminDb.ref(`messages/${message.conversationId}/${messageId}`).set({
+        ...updatedMsg,
+        createdAt: updatedMsg.createdAt.toISOString(),
+      });
+    } catch (e) {
+      console.error("Firebase update error", e);
+    }
+
+    revalidatePath(`/Messages`);
+    return { success: true, message: updatedMsg };
+  } catch (error: any) {
+    console.error("Error deleting message for everyone:", error);
+    return { success: false, error: error.message || "Failed to delete message" };
+  }
+}
+
+

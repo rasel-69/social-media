@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageInput } from "./message-input";
-import { getMessages, markAsRead, reactToMessage } from "@/app/actions/message";
-import { Loader2, Info, X, Mic, MoreVertical, Copy, Reply as ReplyIcon, Edit2, Forward, SmilePlus } from "lucide-react";
+import { getMessages, markAsRead, reactToMessage, deleteMessageForMe, deleteMessageForEveryone } from "@/app/actions/message";
+import { Loader2, Info, X, Mic, MoreVertical, Copy, Reply as ReplyIcon, Edit2, Forward, SmilePlus, Trash2, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { db } from "@/lib/firebase";
@@ -35,6 +35,8 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [editingMessage, setEditingMessage] = useState<any>(null);
   const [forwardingMessage, setForwardingMessage] = useState<any>(null);
+  const [deletingMessage, setDeletingMessage] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch initial messages
   useEffect(() => {
@@ -108,6 +110,31 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
     await reactToMessage(messageId, emoji);
   };
 
+  const handleDeleteForMe = async (messageId: string) => {
+    setIsDeleting(true);
+    const result = await deleteMessageForMe(messageId);
+    if (result.success) {
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      toast.success("Message deleted for you");
+    } else {
+      toast.error(result.error);
+    }
+    setIsDeleting(false);
+    setDeletingMessage(null);
+  };
+
+  const handleDeleteForEveryone = async (messageId: string) => {
+    setIsDeleting(true);
+    const result = await deleteMessageForEveryone(messageId);
+    if (result.success) {
+      toast.success("Message deleted for everyone");
+    } else {
+      toast.error(result.error);
+    }
+    setIsDeleting(false);
+    setDeletingMessage(null);
+  };
+
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
@@ -171,6 +198,8 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
         ) : (
           <div className="space-y-4">
             {messages.map((msg, index) => {
+              if (msg.deletedByIds?.includes(currentUserId)) return null;
+
               const isMe = msg.senderId === currentUserId;
               const showAvatar = !isMe && (index === messages.length - 1 || messages[index + 1]?.senderId === currentUserId);
               
@@ -218,6 +247,10 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                             <DropdownMenuItem onClick={() => setForwardingMessage(msg)} className="cursor-pointer">
                               <Forward className="w-4 h-4 mr-2" /> Forward
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-zinc-800" />
+                            <DropdownMenuItem onClick={() => setDeletingMessage(msg)} className="cursor-pointer text-red-500 focus:text-red-500">
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -247,92 +280,100 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                             : "bg-zinc-800 text-white rounded-bl-sm"
                         }`}
                       >
-                        {msg.isForwarded && (
-                          <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider opacity-70 mb-1 italic">
-                            <Forward className="w-3 h-3" /> Forwarded
+                        {msg.isDeletedForEveryone ? (
+                          <div className="flex items-center gap-2 opacity-60 italic text-sm text-zinc-300">
+                            <Ban className="w-4 h-4" /> This message was deleted
                           </div>
-                        )}
+                        ) : (
+                          <>
+                            {msg.isForwarded && (
+                              <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider opacity-70 mb-1 italic">
+                                <Forward className="w-3 h-3" /> Forwarded
+                              </div>
+                            )}
 
-                        {/* Reply Preview */}
-                        {msg.replyTo && (
-                          <div className={`text-xs p-2 rounded-lg border-l-4 mb-1 ${
-                            isMe ? "bg-black/10 border-black/30 text-black/80" : "bg-black/20 border-emerald-500 text-zinc-300"
-                          }`}>
-                            <div className="font-bold opacity-80 mb-0.5">{msg.replyTo.sender?.name}</div>
-                            <div className="truncate opacity-75">{msg.replyTo.content || "Attachment"}</div>
-                          </div>
-                        )}
+                            {/* Reply Preview */}
+                            {msg.replyTo && (
+                              <div className={`text-xs p-2 rounded-lg border-l-4 mb-1 ${
+                                isMe ? "bg-black/10 border-black/30 text-black/80" : "bg-black/20 border-emerald-500 text-zinc-300"
+                              }`}>
+                                <div className="font-bold opacity-80 mb-0.5">{msg.replyTo.sender?.name}</div>
+                                <div className="truncate opacity-75">{msg.replyTo.content || "Attachment"}</div>
+                              </div>
+                            )}
 
-                        {msg.postId && msg.post && (
-                          <div className={`mb-1 p-3 rounded-xl border flex flex-col gap-2 ${
-                            isMe ? "bg-emerald-600/20 border-emerald-400/30" : "bg-black/20 border-zinc-700"
-                          }`}>
-                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 rounded-full bg-zinc-800 overflow-hidden shrink-0 border border-white/10">
-                                {msg.post.author?.image ? (
-                                  <img src={msg.post.author.image} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-emerald-400">
-                                    {msg.post.author?.name?.[0]?.toUpperCase()}
+                            {msg.postId && msg.post && (
+                              <div className={`mb-1 p-3 rounded-xl border flex flex-col gap-2 ${
+                                isMe ? "bg-emerald-600/20 border-emerald-400/30" : "bg-black/20 border-zinc-700"
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-6 w-6 rounded-full bg-zinc-800 overflow-hidden shrink-0 border border-white/10">
+                                    {msg.post.author?.image ? (
+                                      <img src={msg.post.author.image} alt="" className="h-full w-full object-cover" />
+                                    ) : (
+                                      <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-emerald-400">
+                                        {msg.post.author?.name?.[0]?.toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="text-xs font-bold truncate">{msg.post.author?.name}</span>
+                                </div>
+                                
+                                {msg.post.content && (
+                                  <p className="text-xs line-clamp-3 opacity-90 italic">
+                                    {msg.post.content}
+                                  </p>
+                                )}
+                                
+                                {msg.post.image && (
+                                  <div className="rounded-lg overflow-hidden border border-white/5 max-h-32">
+                                    <img src={msg.post.image} alt="" className="w-full h-full object-cover" />
                                   </div>
                                 )}
-                              </div>
-                              <span className="text-xs font-bold truncate">{msg.post.author?.name}</span>
-                            </div>
-                            
-                            {msg.post.content && (
-                              <p className="text-xs line-clamp-3 opacity-90 italic">
-                                {msg.post.content}
-                              </p>
-                            )}
-                            
-                            {msg.post.image && (
-                              <div className="rounded-lg overflow-hidden border border-white/5 max-h-32">
-                                <img src={msg.post.image} alt="" className="w-full h-full object-cover" />
+
+                                <Link 
+                                  href={`/Post/${msg.postId}`}
+                                  className={`text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded-md self-start transition ${
+                                    isMe ? "bg-emerald-400 text-black hover:bg-white" : "bg-zinc-700 text-white hover:bg-emerald-500 hover:text-black"
+                                  }`}
+                                >
+                                  View Post
+                                </Link>
                               </div>
                             )}
+                            {msg.audioUrl && (
+                              <div className={`mb-2 p-2 rounded-xl flex items-center gap-3 min-w-[200px] ${
+                                isMe ? "bg-emerald-600/30" : "bg-black/40"
+                              }`}>
+                                <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                                  isMe ? "bg-emerald-400 text-black" : "bg-emerald-500 text-black"
+                                }`}>
+                                  <Mic className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1">
+                                  <audio 
+                                    src={msg.audioUrl} 
+                                    controls 
+                                    className={`h-8 w-full max-w-[240px] custom-audio-player ${
+                                      isMe ? "brightness-110 contrast-125" : ""
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            
+                            {msg.imageUrl && (
+                              <div className="mb-2 max-w-[240px] sm:max-w-[300px] rounded-xl overflow-hidden border border-white/10 bg-black/20">
+                                <img src={msg.imageUrl} alt="Shared image" className="w-full h-auto object-cover" />
+                              </div>
+                            )}
+                            
+                            {msg.content && <span>{msg.content}</span>}
 
-                            <Link 
-                              href={`/Post/${msg.postId}`}
-                              className={`text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded-md self-start transition ${
-                                isMe ? "bg-emerald-400 text-black hover:bg-white" : "bg-zinc-700 text-white hover:bg-emerald-500 hover:text-black"
-                              }`}
-                            >
-                              View Post
-                            </Link>
-                          </div>
-                        )}
-                        {msg.audioUrl && (
-                          <div className={`mb-2 p-2 rounded-xl flex items-center gap-3 min-w-[200px] ${
-                            isMe ? "bg-emerald-600/30" : "bg-black/40"
-                          }`}>
-                            <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
-                              isMe ? "bg-emerald-400 text-black" : "bg-emerald-500 text-black"
-                            }`}>
-                              <Mic className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1">
-                              <audio 
-                                src={msg.audioUrl} 
-                                controls 
-                                className={`h-8 w-full max-w-[240px] custom-audio-player ${
-                                  isMe ? "brightness-110 contrast-125" : ""
-                                }`}
-                              />
-                            </div>
-                          </div>
-                        )}
-                        
-                        {msg.imageUrl && (
-                          <div className="mb-2 max-w-[240px] sm:max-w-[300px] rounded-xl overflow-hidden border border-white/10 bg-black/20">
-                            <img src={msg.imageUrl} alt="Shared image" className="w-full h-auto object-cover" />
-                          </div>
-                        )}
-                        
-                        {msg.content && <span>{msg.content}</span>}
-
-                        {msg.isEdited && (
-                          <span className="text-[10px] opacity-60 self-end -mt-1 italic">(edited)</span>
+                            {msg.isEdited && (
+                              <span className="text-[10px] opacity-60 self-end -mt-1 italic">(edited)</span>
+                            )}
+                          </>
                         )}
                       </div>
 
@@ -370,6 +411,10 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                             )}
                             <DropdownMenuItem onClick={() => setForwardingMessage(msg)} className="cursor-pointer">
                               <Forward className="w-4 h-4 mr-2" /> Forward
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-zinc-800" />
+                            <DropdownMenuItem onClick={() => setDeletingMessage(msg)} className="cursor-pointer text-red-500 focus:text-red-500">
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -420,6 +465,45 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
                 }}
               >
                 Forward to Recent
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {deletingMessage && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-xs p-6 relative">
+            <button onClick={() => setDeletingMessage(null)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-white mb-4">Delete message?</h3>
+            <div className="flex flex-col gap-3 mt-6">
+              {deletingMessage.senderId === currentUserId && !deletingMessage.isDeletedForEveryone && (
+                <button 
+                  onClick={() => handleDeleteForEveryone(deletingMessage.id)}
+                  disabled={isDeleting}
+                  className="w-full py-2.5 bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold rounded-xl transition flex justify-center items-center gap-2"
+                >
+                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  Delete for everyone
+                </button>
+              )}
+              <button 
+                onClick={() => handleDeleteForMe(deletingMessage.id)}
+                disabled={isDeleting}
+                className="w-full py-2.5 bg-zinc-800 text-white hover:bg-zinc-700 font-bold rounded-xl transition flex justify-center items-center gap-2"
+              >
+                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Delete for me
+              </button>
+              <button 
+                onClick={() => setDeletingMessage(null)}
+                disabled={isDeleting}
+                className="w-full py-2.5 bg-transparent border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 font-bold rounded-xl transition"
+              >
+                Cancel
               </button>
             </div>
           </div>
