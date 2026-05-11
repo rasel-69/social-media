@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { checkUserExists } from "@/app/actions";
 
 function LoginContent() {
     const [email, setEmail] = useState("");
@@ -34,7 +35,13 @@ function LoginContent() {
                 callbackURL: callbackURL,
             });
             if (loginError) {
-                setError(loginError.message || "Invalid credentials.");
+                // If login fails, check if the email exists to provide a specific error message
+                const userExists = await checkUserExists(email);
+                if (!userExists) {
+                    setError("Invalid email.");
+                } else {
+                    setError("Invalid Password.");
+                }
             } else {
                 // Successful login, navigate to callback URL
                 router.push(callbackURL);

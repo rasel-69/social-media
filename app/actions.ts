@@ -663,3 +663,20 @@ export async function getUnreadNotificationCount() {
     return 0;
   }
 }
+
+/**
+ * Checks if a user exists by email.
+ * Used to provide specific error messages during login.
+ */
+export async function checkUserExists(email: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: { id: true },
+    });
+    return !!user;
+  } catch (error) {
+    console.error("Error checking user existence:", error);
+    return false;
+  }
+}
