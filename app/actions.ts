@@ -638,7 +638,7 @@ export async function markNotificationsAsRead() {
       data: { isRead: true },
     });
 
-    revalidatePath("/Notifications");
+    revalidatePath("/notifications");
     return { success: true };
   } catch (error) {
     console.error("Error in markNotificationsAsRead:", error);

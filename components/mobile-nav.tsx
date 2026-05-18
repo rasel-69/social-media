@@ -12,8 +12,8 @@ export function MobileNav() {
 
   const links = [
     { name: "Home", icon: HomeIcon, href: "/" },
-    { name: "Explore", icon: Compass, href: "/Explore" },
-    { name: "Notifications", icon: Bell, href: "/Notifications" },
+    { name: "Explore", icon: Compass, href: "/explore" },
+    { name: "Notifications", icon: Bell, href: "/notifications" },
     { name: "Messages", icon: Mail, href: "/Messages" },
   ];
 

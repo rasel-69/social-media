@@ -134,18 +134,18 @@ export function Sidebar() {
           </Link>
 
           <Link
-            href="/Explore"
-            onClick={(e) => handleAuthRedirect(e, "/Explore")}
-            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Explore" ? "text-emerald-400" : "text-white"}`}
+            href="/explore"
+            onClick={(e) => handleAuthRedirect(e, "/explore")}
+            className={`flex w-full items-center gap-3 rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/explore" ? "text-emerald-400" : "text-white"}`}
           >
             <CompassIcon className="h-6 w-6" />
             Explore
           </Link>
 
           <Link
-            href="/Notifications"
-            onClick={(e) => handleAuthRedirect(e, "/Notifications")}
-            className={`flex w-full items-center justify-between rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/Notifications" ? "text-emerald-400" : "text-white"}`}
+            href="/notifications"
+            onClick={(e) => handleAuthRedirect(e, "/notifications")}
+            className={`flex w-full items-center justify-between rounded-full px-4 py-3 text-left transition hover:bg-zinc-900 ${pathname === "/notifications" ? "text-emerald-400" : "text-white"}`}
           >
             <div className="flex items-center gap-3">
               <BellIcon className="h-6 w-6" />

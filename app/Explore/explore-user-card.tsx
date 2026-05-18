@@ -25,7 +25,7 @@ export function ExploreUserCard({ user, currentUserId }: ExploreUserCardProps) {
 
   const handleAddFriend = () => {
     if (!currentUserId) {
-      router.push("/login?callbackURL=/Explore");
+      router.push("/login?callbackURL=/explore");
       return;
     }
 

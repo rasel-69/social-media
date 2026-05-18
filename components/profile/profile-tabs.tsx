@@ -4,9 +4,10 @@ import { useState } from "react";
 import { ProfileFeed } from "./profile-feed";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { LogOut, LayoutGrid, UserCircle, Image as ImageIcon, Users } from "lucide-react";
+import { LogOut, LayoutGrid, UserCircle, Image as ImageIcon, Users, UserPlus, UserCheck } from "lucide-react";
 import { AboutTab } from "./about-tab";
 import { ProfileFriendsList } from "./profile-friends-list";
+import { ProfileUserList } from "./profile-user-list";
 
 interface ProfileTabsProps {
   user: any;
@@ -14,7 +15,7 @@ interface ProfileTabsProps {
   currentUserId?: string;
 }
 
-type TabType = "All" | "About" | "Photos" | "Friends";
+type TabType = "All" | "About" | "Photos" | "Friends" | "Followers" | "Following";
 
 export function ProfileTabs({ user, isOwnProfile, currentUserId }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("All");
@@ -31,6 +32,8 @@ export function ProfileTabs({ user, isOwnProfile, currentUserId }: ProfileTabsPr
     { name: "About", icon: UserCircle },
     { name: "Photos", icon: ImageIcon },
     { name: "Friends", icon: Users },
+    { name: "Followers", icon: UserPlus },
+    { name: "Following", icon: UserCheck },
   ];
 
   return (
@@ -77,6 +80,12 @@ export function ProfileTabs({ user, isOwnProfile, currentUserId }: ProfileTabsPr
         )}
         {activeTab === "Friends" && (
           <ProfileFriendsList userId={user.id} />
+        )}
+        {activeTab === "Followers" && (
+          <ProfileUserList userId={user.id} type="followers" currentUserId={currentUserId} />
+        )}
+        {activeTab === "Following" && (
+          <ProfileUserList userId={user.id} type="following" currentUserId={currentUserId} />
         )}
       </div>
     </div>

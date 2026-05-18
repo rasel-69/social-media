@@ -96,6 +96,7 @@ export function NotificationList({ initialNotifications }: NotificationListProps
       case "REPLY": return <Reply className="h-4 w-4 text-emerald-500" />;
       case "SHARE": return <Share2 className="h-4 w-4 text-emerald-500" />;
       case "FRIEND_REQUEST": return <UserPlus className="h-4 w-4 text-blue-400" />;
+      case "FOLLOW": return <UserPlus className="h-4 w-4 text-emerald-400" />;
       case "MENTION": return <AtSign className="h-4 w-4 text-purple-500" />;
       default: return <Bell className="h-4 w-4 text-emerald-500" />;
     }
@@ -108,6 +109,7 @@ export function NotificationList({ initialNotifications }: NotificationListProps
       case "REPLY": return "replied to your comment";
       case "SHARE": return "shared your post";
       case "FRIEND_REQUEST": return "sent you a friend request";
+      case "FOLLOW": return "started following you";
       case "MENTION": return notification.commentId ? "mentioned you in a comment" : "mentioned you in a post";
       default: return "interacted with you";
     }
@@ -234,7 +236,7 @@ export function NotificationList({ initialNotifications }: NotificationListProps
             );
 
             const handleNavigate = () => {
-              if (notification.type === "FRIEND_REQUEST") {
+              if (notification.type === "FRIEND_REQUEST" || notification.type === "FOLLOW") {
                 router.push(`/Profile/${notification.actor.username || notification.actorId}`);
                 return;
               }

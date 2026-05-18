@@ -38,7 +38,7 @@ function LoginContent() {
                 // If login fails, check if the email exists to provide a specific error message
                 const userExists = await checkUserExists(email);
                 if (!userExists) {
-                    setError("Invalid email.");
+                    setError("Please Create Your account first.");
                 } else {
                     setError("Invalid Password.");
                 }

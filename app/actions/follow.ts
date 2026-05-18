@@ -14,6 +14,7 @@ export async function followUser(targetUserId: string) {
   if (!session) throw new Error("Unauthorized");
   if (session.user.id === targetUserId) throw new Error("Cannot follow yourself");
 
+  // Create follow record
   await prisma.follow.create({
     data: {
       followerId: session.user.id,
@@ -21,8 +22,32 @@ export async function followUser(targetUserId: string) {
     },
   });
 
+  // Create follow notification for target user
+  await (prisma as any).notification.create({
+    data: {
+      userId: targetUserId,
+      actorId: session.user.id,
+      type: "FOLLOW",
+    },
+  });
+
+  // Fetch usernames to revalidate specific profile pages
+  const [targetUser, currentUser] = await Promise.all([
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } }),
+  ]);
+
   revalidatePath("/");
-  revalidatePath(`/Profile`);
+  if (targetUser?.username) {
+    revalidatePath(`/Profile/${targetUser.username}`);
+  }
+  revalidatePath(`/Profile/${targetUserId}`);
+
+  if (currentUser?.username) {
+    revalidatePath(`/Profile/${currentUser.username}`);
+  }
+  revalidatePath(`/Profile/${session.user.id}`);
+  
   return { success: true };
 }
 
@@ -33,6 +58,7 @@ export async function unfollowUser(targetUserId: string) {
 
   if (!session) throw new Error("Unauthorized");
 
+  // Delete follow record
   await prisma.follow.deleteMany({
     where: {
       followerId: session.user.id,
@@ -40,8 +66,32 @@ export async function unfollowUser(targetUserId: string) {
     },
   });
 
+  // Delete the follow notification
+  await (prisma as any).notification.deleteMany({
+    where: {
+      userId: targetUserId,
+      actorId: session.user.id,
+      type: "FOLLOW",
+    },
+  });
+
+  // Fetch usernames to revalidate specific profile pages
+  const [targetUser, currentUser] = await Promise.all([
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { username: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } }),
+  ]);
+
   revalidatePath("/");
-  revalidatePath(`/Profile`);
+  if (targetUser?.username) {
+    revalidatePath(`/Profile/${targetUser.username}`);
+  }
+  revalidatePath(`/Profile/${targetUserId}`);
+
+  if (currentUser?.username) {
+    revalidatePath(`/Profile/${currentUser.username}`);
+  }
+  revalidatePath(`/Profile/${session.user.id}`);
+
   return { success: true };
 }
 

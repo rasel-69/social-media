@@ -96,7 +96,7 @@ export async function sendFriendRequest(receiverId: string) {
     });
 
     revalidatePath(`/Profile/${receiverId}`);
-    revalidatePath(`/Explore`);
+    revalidatePath(`/explore`);
     return { success: true };
   } catch (error: any) {
     console.error("Error sending friend request:", error);
@@ -145,7 +145,7 @@ export async function acceptFriendRequest(senderId: string) {
     ]);
 
     revalidatePath(`/Profile/${senderId}`);
-    revalidatePath(`/Explore`);
+    revalidatePath(`/explore`);
     return { success: true };
   } catch (error: any) {
     console.error("Error accepting friend request:", error);
@@ -185,7 +185,7 @@ export async function rejectFriendRequest(senderId: string) {
     ]);
 
     revalidatePath(`/Profile/${senderId}`);
-    revalidatePath(`/Explore`);
+    revalidatePath(`/explore`);
     return { success: true };
   } catch (error: any) {
     console.error("Error rejecting friend request:", error);
@@ -224,7 +224,7 @@ export async function cancelFriendRequest(receiverId: string) {
     }
 
     revalidatePath(`/Profile/${receiverId}`);
-    revalidatePath(`/Explore`);
+    revalidatePath(`/explore`);
     return { success: true };
   } catch (error: any) {
     console.error("Error canceling friend request:", error);
@@ -265,7 +265,7 @@ export async function removeFriend(friendId: string) {
     }
 
     revalidatePath(`/Profile/${friendId}`);
-    revalidatePath(`/Explore`);
+    revalidatePath(`/explore`);
     return { success: true };
   } catch (error: any) {
     console.error("Error removing friend:", error);

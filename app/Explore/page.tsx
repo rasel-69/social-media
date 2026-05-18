@@ -24,7 +24,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Sear
   });
   
   if (!session) {
-    redirect("/login?callbackURL=/Explore");
+    redirect("/login?callbackURL=/explore");
   }
 
   const resolvedSearchParams = await searchParams;

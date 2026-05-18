@@ -11,7 +11,7 @@ export default async function NotificationsPage() {
   });
 
   if (!session) {
-    redirect("/login?callbackURL=/Notifications");
+    redirect("/login?callbackURL=/notifications");
   }
 
   const notifications = await getNotifications();

@@ -49,7 +49,7 @@ export async function RightSidebar() {
           <div className="space-y-4">
             {suggestedUsers.length > 0 ? (
               suggestedUsers.map((user) => (
-                <UserFollowCard key={user.id} user={user} initialIsFollowing={false} />
+                <UserFollowCard key={user.id} user={user} initialIsFollowing={false} currentUserId={session?.user.id} />
               ))
             ) : (
               <p className="text-sm text-zinc-500">No suggestions right now.</p>
