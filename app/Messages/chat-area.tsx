@@ -92,15 +92,37 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
 
   const handleIncomingMessage = (newMessage: any) => {
     setMessages(prev => {
+      // Check if this message already exists by ID
       const existsIndex = prev.findIndex(p => p.id === newMessage.id);
       if (existsIndex >= 0) {
         const newArray = [...prev];
         newArray[existsIndex] = newMessage;
         return newArray;
       }
+
+      // If this is a real message from the server, check if there's an optimistic
+      // message with the same content that we should replace (to avoid duplicates)
+      if (newMessage.senderId === currentUserId) {
+        const optimisticIndex = prev.findIndex(
+          p => p._optimistic && p.content === newMessage.content
+        );
+        if (optimisticIndex >= 0) {
+          const newArray = [...prev];
+          newArray[optimisticIndex] = newMessage;
+          return newArray;
+        }
+      }
+
+      // If it's an optimistic message, just append it
+      if (newMessage._optimistic) {
+        return [...prev, newMessage];
+      }
+
       return [...prev, newMessage];
     });
-    onMessageAdded(newMessage);
+    if (!newMessage._optimistic) {
+      onMessageAdded(newMessage);
+    }
   };
 
   const handleCopy = (content: string) => {
@@ -228,8 +250,10 @@ export function ChatArea({ conversationId, currentUserId, otherUser, onMessageAd
             {messages.map((msg, index) => {
               if (msg.deletedByIds?.includes(currentUserId)) return null;
 
-              const isMe = msg.senderId === currentUserId;
-              const showAvatar = !isMe && (index === messages.length - 1 || messages[index + 1]?.senderId === currentUserId);
+              const isMe = msg.senderId === currentUserId || msg.senderId === "SELF";
+              const nextSenderId = messages[index + 1]?.senderId;
+              const nextIsMe = nextSenderId === currentUserId || nextSenderId === "SELF";
+              const showAvatar = !isMe && (index === messages.length - 1 || nextIsMe);
               
               // Simple time grouping
               const msgDate = new Date(msg.createdAt);

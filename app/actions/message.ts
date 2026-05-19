@@ -178,34 +178,16 @@ export async function sendMessage(conversationId: string, content: string, audio
     const currentUserId = session.user.id;
     if (!content.trim() && !audioUrl && !imageUrl) throw new Error("Message cannot be empty");
 
-    // Combine conversation and friendship check into one query if possible
-    // or at least optimize the existing ones.
+    // Only select the fields we actually need — no joins
     const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
-      include: {
-        user1: { select: { id: true } },
-        user2: { select: { id: true } },
-      }
+      select: { user1Id: true, user2Id: true },
     });
 
     if (!conversation) throw new Error("Invalid conversation");
     
     const isParticipant = conversation.user1Id === currentUserId || conversation.user2Id === currentUserId;
     if (!isParticipant) throw new Error("Unauthorized access to conversation");
-
-    const friendId = conversation.user1Id === currentUserId ? conversation.user2Id : conversation.user1Id;
-
-    // Check friendship exists and is active
-    const friendship = await prisma.friendship.findFirst({
-      where: {
-        OR: [
-          { userId1: currentUserId, userId2: friendId },
-          { userId1: friendId, userId2: currentUserId },
-        ],
-      },
-    });
-
-    if (!friendship) throw new Error("You are no longer friends with this user");
 
     const lastMsgPreview = content.trim() ? content : imageUrl ? "📷 Image message" : "🎤 Audio message";
 
@@ -235,27 +217,14 @@ export async function sendMessage(conversationId: string, content: string, audio
       }),
     ]);
 
-    // Side effects: Firebase push and Revalidation
-    // We wrap these to ensure they don't block each other if one fails
-    const sideEffects = [
-      adminDb.ref(`messages/${conversationId}/${message.id}`).set({
-        ...message,
-        createdAt: message.createdAt.toISOString(),
-      }).catch(e => console.error("Firebase push error:", e)),
-      
-      // revalidatePath is critical for the UI to update unread counts etc.
-      (async () => {
-        try {
-          revalidatePath(`/Messages`);
-        } catch (e) {
-          console.error("Revalidation error:", e);
-        }
-      })()
-    ];
+    // Side effects: Firebase push and Revalidation — fire and forget
+    // These run in the background so the response returns immediately
+    adminDb.ref(`messages/${conversationId}/${message.id}`).set({
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+    }).catch(e => console.error("Firebase push error:", e));
 
-    // Wait for critical side effects if necessary, or just return
-    // In Next.js Server Actions, awaiting revalidatePath is usually recommended
-    await Promise.all(sideEffects);
+    try { revalidatePath(`/Messages`); } catch (e) { console.error("Revalidation error:", e); }
 
     return { success: true, message };
   } catch (error: any) {

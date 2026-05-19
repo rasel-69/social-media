@@ -144,11 +144,10 @@ export function MessageInput({
   const handleSend = async () => {
     if ((!content.trim() && !audioBlob && !imageFile) || isSending || isUploading) return;
 
-    setIsSending(true);
-
     try {
       if (editingMessage) {
-        // Handle Edit
+        // Handle Edit — still awaited since we need server confirmation
+        setIsSending(true);
         const result = await editMessage(editingMessage.id, content);
         if (result.success) {
           setContent("");
@@ -156,8 +155,10 @@ export function MessageInput({
         } else {
           toast.error(result.error || "Failed to edit message");
         }
-      } else {
-        // Handle Send new message
+        setIsSending(false);
+      } else if (audioBlob || imageFile) {
+        // Handle audio/image — requires upload first, so show loader
+        setIsSending(true);
         let currentAudioUrl = undefined;
         let currentImageUrl = undefined;
         
@@ -186,8 +187,6 @@ export function MessageInput({
           setRecordingTime(0);
           cancelImage();
           if (replyingTo) onCancelReply?.();
-          // We rely on firebase listener in chat-area to handle appending
-          // but we also have onMessageSent here for immediate updates
           onMessageSent(result.message);
           if (inputRef.current) {
             inputRef.current.style.height = "auto";
@@ -196,11 +195,62 @@ export function MessageInput({
         } else {
           toast.error(result.error || "Failed to send message");
         }
+        setIsSending(false);
+        setIsUploading(false);
+      } else {
+        // ── Optimistic text-only send: show message INSTANTLY ──
+        const textToSend = content.trim();
+        const savedReplyTo = replyingTo;
+
+        // 1. Clear input immediately — feels instant
+        setContent("");
+        if (replyingTo) onCancelReply?.();
+        if (inputRef.current) {
+          inputRef.current.style.height = "auto";
+          inputRef.current.focus();
+        }
+
+        // 2. Show optimistic message in chat right away
+        const optimisticId = `optimistic-${Date.now()}`;
+        const optimisticMsg = {
+          id: optimisticId,
+          content: textToSend,
+          audioUrl: null,
+          imageUrl: null,
+          senderId: "SELF",
+          conversationId,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          isEdited: false,
+          isForwarded: false,
+          isDeletedForEveryone: false,
+          deletedByIds: [],
+          replyToId: savedReplyTo?.id || null,
+          replyTo: savedReplyTo
+            ? { id: savedReplyTo.id, content: savedReplyTo.content, sender: { name: savedReplyTo.sender?.name } }
+            : null,
+          reactions: [],
+          sender: null, // will be filled by chat-area from session
+          _optimistic: true,
+        };
+        onMessageSent(optimisticMsg);
+
+        // 3. Fire server action in the background — no await blocking UI
+        sendMessage(conversationId, textToSend, undefined, undefined, savedReplyTo?.id)
+          .then((result) => {
+            if (!result.success) {
+              toast.error(result.error || "Failed to send message");
+            }
+            // Firebase listener in chat-area will handle the real message
+          })
+          .catch((error) => {
+            console.error("Error sending message:", error);
+            toast.error("Failed to send message");
+          });
       }
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
-    } finally {
       setIsSending(false);
       setIsUploading(false);
     }
